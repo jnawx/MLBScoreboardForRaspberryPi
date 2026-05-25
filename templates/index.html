@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Padres Pi Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <main class="layout">
+      <header class="score-shell">
+        <div class="team-panel">
+          <p class="label">Away</p>
+          <p id="awayName" class="team-name">Away Team</p>
+          <p id="awayAbbrev" class="team-abbrev">AWY</p>
+        </div>
+        <div class="score-panel">
+          <p id="modeBadge" class="mode-badge">Loading...</p>
+          <div class="runs-row">
+            <div class="run-box">
+              <p class="run-label">R</p>
+              <p id="awayRuns" class="run-value">0</p>
+            </div>
+            <div class="run-box">
+              <p class="run-label">R</p>
+              <p id="homeRuns" class="run-value">0</p>
+            </div>
+          </div>
+          <div class="stats-row">
+            <p id="awayStats">H 0 | E 0</p>
+            <p id="homeStats">H 0 | E 0</p>
+          </div>
+        </div>
+        <div class="team-panel home-team">
+          <p class="label">Home</p>
+          <p id="homeName" class="team-name">Home Team</p>
+          <p id="homeAbbrev" class="team-abbrev">HME</p>
+        </div>
+      </header>
+
+      <section class="video-shell">
+        <video id="mainVideo" autoplay playsinline controls></video>
+        <div id="noVideoMessage" class="empty-message hidden">No highlights available yet.</div>
+      </section>
+
+      <section class="detail-shell">
+        <p id="statusLine" class="status-line">Waiting for game data...</p>
+        <p id="detailLine" class="detail-line">Padres Pi Board</p>
+        <p id="clipTitle" class="clip-title">Loading clips...</p>
+        <p id="clipMeta" class="clip-meta"></p>
+        <p id="updateStamp" class="update-stamp"></p>
+      </section>
+
+      <section class="slide-shell">
+        <div class="slide-head">
+          <p class="slide-kicker">Custom Kiosk View</p>
+          <p id="slideName" class="slide-name">Loading slides...</p>
+          <a class="editor-link" href="/editor" target="_blank" rel="noopener">Open Scene Editor</a>
+        </div>
+        <div id="slideContainer" class="slide-container">
+          <p class="slide-empty">Loading slide content...</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

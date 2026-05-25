@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visual Scene Editor | Padres Pi Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/editor.css?v={{ editor_asset_version }}" />
+  </head>
+  <body>
+    <div class="editor-atmosphere" aria-hidden="true"></div>
+
+    <main class="editor-layout">
+      <header class="editor-header">
+        <div>
+          <p class="editor-kicker">{{ team_name }} Designer Tools</p>
+          <h1>Visual Scene Template Editor</h1>
+          <p id="editorFileLabel" class="editor-file">Visual scenes: {{ visual_scene_template_file }}</p>
+          <p class="editor-file">Kiosk templates: {{ kiosk_template_file }}</p>
+        </div>
+        <div class="editor-actions">
+          <a class="editor-link" href="/" target="_blank" rel="noopener">Open Board</a>
+          <button id="reloadBtn" type="button">Reload</button>
+          <button id="saveBtn" type="button" class="primary">Save JSON</button>
+        </div>
+      </header>
+
+      <section class="editor-global panel">
+        <div class="field-inline">
+          <label for="globalEnabled">Editor Enabled</label>
+          <input id="globalEnabled" type="checkbox" />
+        </div>
+        <label for="globalSlideTransitionMs">Default Slide Transition (ms)</label>
+        <input id="globalSlideTransitionMs" type="number" min="200" step="10" />
+        <label for="globalEnterEffect">Default Enter Effect</label>
+        <select id="globalEnterEffect"></select>
+        <label for="globalEnterDurationMs">Default Enter Duration (ms)</label>
+        <input id="globalEnterDurationMs" type="number" min="120" step="10" />
+        <label for="globalEnterDelayMs">Default Enter Delay (ms)</label>
+        <input id="globalEnterDelayMs" type="number" min="0" step="10" />
+        <label for="globalExitEffect">Default Exit Effect</label>
+        <select id="globalExitEffect"></select>
+        <label for="globalExitDurationMs">Default Exit Duration (ms)</label>
+        <input id="globalExitDurationMs" type="number" min="120" step="10" />
+        <label for="globalExitDelayMs">Default Exit Delay (ms)</label>
+        <input id="globalExitDelayMs" type="number" min="0" step="10" />
+      </section>
+
+      <section class="editor-grid">
+        <aside class="panel templates-panel">
+          <div class="panel-head">
+            <h2>Templates</h2>
+            <div class="panel-actions">
+              <button id="addTemplateBtn" type="button">Add</button>
+              <button id="duplicateTemplateBtn" type="button">Duplicate</button>
+              <button id="removeTemplateBtn" type="button" class="danger">Remove</button>
+            </div>
+          </div>
+          <div id="templateList" class="template-list"></div>
+        </aside>
+
+        <section class="panel template-panel">
+          <div class="panel-head">
+            <h2>Template Settings</h2>
+            <p id="activeTemplateLabel" class="panel-subtitle">No template selected</p>
+          </div>
+          <div class="form-grid">
+            <label for="templateName">Template Name</label>
+            <input id="templateName" type="text" placeholder="Friendly name shown in editor" />
+
+            <label for="templateTransitionInEffect">Transition In Effect</label>
+            <select id="templateTransitionInEffect"></select>
+
+            <label for="templateTransitionInDuration">Transition In Duration (ms)</label>
+            <input id="templateTransitionInDuration" type="number" min="120" step="10" />
+
+            <label for="templateTransitionOutEffect">Transition Out Effect</label>
+            <select id="templateTransitionOutEffect"></select>
+
+            <label for="templateTransitionOutDuration">Transition Out Duration (ms)</label>
+            <input id="templateTransitionOutDuration" type="number" min="120" step="10" />
+
+            <label for="templateDurationSeconds">Slide Play Duration (seconds)</label>
+            <input id="templateDurationSeconds" type="number" min="5" step="1" />
+
+            <p class="panel-subtitle">
+              Applies to matching kiosk auto-slide templates for this visual template type.
+            </p>
+
+            <label for="backgroundColor">Background Color / Gradient</label>
+            <input id="backgroundColor" type="text" />
+
+            <label for="backgroundImage">Background Image URL / Expression</label>
+            <input id="backgroundImage" type="text" />
+
+            <label for="backgroundSize">Background Size</label>
+            <input id="backgroundSize" type="text" />
+
+            <label for="backgroundPosition">Background Position</label>
+            <input id="backgroundPosition" type="text" />
+
+            <label for="backgroundRepeat">Background Repeat</label>
+            <input id="backgroundRepeat" type="text" />
+
+            <label for="backgroundBlendMode">Background Blend Mode</label>
+            <input id="backgroundBlendMode" type="text" />
+
+            <label for="backgroundOverlay">Overlay</label>
+            <input id="backgroundOverlay" type="text" />
+          </div>
+
+          <div class="template-extra-group">
+            <div class="panel-head compact">
+              <h3>Runtime API Source</h3>
+              <p class="panel-subtitle">Optional fetch for template payload data</p>
+            </div>
+
+            <div class="form-grid">
+              <label for="templateApiEndpoint">API Endpoint (optional)</label>
+              <input
+                id="templateApiEndpoint"
+                type="text"
+                placeholder="/player/{% raw %}{{vars.playerId}}{% endraw %}?date={% raw %}{{vars.date}}{% endraw %}&amp;gameId={% raw %}{{vars.gameId}}{% endraw %}"
+              />
+
+              <p class="panel-subtitle api-variable-hint">
+                Add {% raw %}{{vars.someKey}}{% endraw %} placeholders in the endpoint. Sample input fields for each key appear below.
+              </p>
+              <div id="templateApiVariableFields" class="api-variable-fields"></div>
+            </div>
+          </div>
+
+        </section>
+
+        <section class="panel elements-panel">
+          <div class="panel-head">
+            <h2>Elements</h2>
+            <div class="panel-actions">
+              <select id="newElementKind">
+                <option value="text">Text</option>
+                <option value="image">Image</option>
+                <option value="list">List</option>
+                <option value="grid">Grid</option>
+                <option value="bar">Bar</option>
+              </select>
+              <button id="addElementBtn" type="button">Add Element</button>
+              <button id="duplicateElementBtn" type="button">Duplicate</button>
+              <button id="removeElementBtn" type="button" class="danger">Delete</button>
+            </div>
+          </div>
+
+          <div class="elements-layout">
+            <div class="element-list-wrap">
+              <div id="elementList" class="element-list"></div>
+              <div class="element-order-actions">
+                <button id="moveElementUpBtn" type="button">Move Up</button>
+                <button id="moveElementDownBtn" type="button">Move Down</button>
+              </div>
+            </div>
+
+            <div class="element-editor" id="elementEditor">
+              <div class="form-grid">
+                <label for="elementKind">Kind</label>
+                <select id="elementKind">
+                  <option value="text">Text</option>
+                  <option value="image">Image</option>
+                  <option value="list">List</option>
+                  <option value="grid">Grid</option>
+                  <option value="bar">Bar</option>
+                </select>
+
+                <label for="elementClassName">Class Name</label>
+                <input id="elementClassName" type="text" />
+
+                <label for="elementX">X</label>
+                <input id="elementX" type="text" />
+
+                <label for="elementY">Y</label>
+                <input id="elementY" type="text" />
+
+                <label for="elementW">W</label>
+                <input id="elementW" type="text" />
+
+                <label for="elementH">H</label>
+                <input id="elementH" type="text" />
+
+                <label for="elementRight">Right</label>
+                <input id="elementRight" type="text" />
+
+                <label for="elementBottom">Bottom</label>
+                <input id="elementBottom" type="text" />
+
+                <label for="elementEnterEffect">Enter Effect</label>
+                <select id="elementEnterEffect"></select>
+
+                <label for="elementEnterDuration">Enter Duration (ms)</label>
+                <input id="elementEnterDuration" type="number" min="120" step="10" />
+
+                <label for="elementEnterDelay">Enter Delay (ms)</label>
+                <input id="elementEnterDelay" type="number" min="0" step="10" />
+
+                <label for="elementExitEffect">Exit Effect</label>
+                <select id="elementExitEffect"></select>
+
+                <label for="elementExitDuration">Exit Duration (ms)</label>
+                <input id="elementExitDuration" type="number" min="120" step="10" />
+
+                <label for="elementExitDelay">Exit Delay (ms)</label>
+                <input id="elementExitDelay" type="number" min="0" step="10" />
+
+                <label for="elementExitBeforeEnd">Exit Before Slide End (ms)</label>
+                <input id="elementExitBeforeEnd" type="number" min="0" step="10" placeholder="1200" />
+              </div>
+
+              <div class="kind-fields" id="kindTextFields">
+                <h3>Text Fields</h3>
+                <label for="textTag">Tag</label>
+                <input id="textTag" type="text" />
+                <label for="textValue">Text</label>
+                <textarea id="textValue" rows="2"></textarea>
+                <label for="textPath">Text Path</label>
+                <input id="textPath" type="text" />
+                <label for="textFontSize">Text Font Size</label>
+                <input id="textFontSize" type="text" placeholder="2rem" />
+                <label for="textColor">Text Color</label>
+                <input id="textColor" type="text" placeholder="payload.theme.text.title" />
+                <label for="textFontWeight">Text Font Weight</label>
+                <input id="textFontWeight" type="text" placeholder="700" />
+              </div>
+
+              <div class="kind-fields" id="kindImageFields">
+                <h3>Image Fields</h3>
+                <label for="imageSrc">Src</label>
+                <input id="imageSrc" type="text" />
+                <label for="imageSrcPath">Src Path</label>
+                <input id="imageSrcPath" type="text" />
+                <label for="imageAlt">Alt</label>
+                <input id="imageAlt" type="text" />
+              </div>
+
+              <div class="kind-fields" id="kindListFields">
+                <h3>List / Grid Fields</h3>
+                <label for="listTitleTemplate">Collection Title Template</label>
+                <input id="listTitleTemplate" type="text" />
+                <label for="listTitleFontSize">Collection Title Font Size</label>
+                <input id="listTitleFontSize" type="text" placeholder="0.78rem" />
+                <label for="listTitleColor">Collection Title Color</label>
+                <input id="listTitleColor" type="text" placeholder="payload.theme.text.muted" />
+                <div class="field-inline list-toggle-inline">
+                  <label for="listContainerPanel">Container Panel</label>
+                  <input id="listContainerPanel" type="checkbox" />
+                </div>
+                <label for="listColumns">Grid Columns</label>
+                <input id="listColumns" type="number" min="1" step="1" />
+                <label for="listGridGap">Grid Gap</label>
+                <input id="listGridGap" type="text" placeholder="0.4rem" />
+                <label for="listGridAlignX">Grid Horizontal Align</label>
+                <select id="listGridAlignX">
+                  <option value="">Inherit</option>
+                  <option value="stretch">Stretch</option>
+                  <option value="start">Start</option>
+                  <option value="center">Center</option>
+                  <option value="end">End</option>
+                </select>
+                <label for="listGridAlignY">Grid Vertical Align</label>
+                <select id="listGridAlignY">
+                  <option value="">Inherit</option>
+                  <option value="stretch">Stretch</option>
+                  <option value="start">Start</option>
+                  <option value="center">Center</option>
+                  <option value="end">End</option>
+                </select>
+                <label for="listItemsPath">Items Path</label>
+                <input id="listItemsPath" type="text" />
+                <label for="listItemsJson">List Items JSON (optional, overrides Items Path)</label>
+                <textarea
+                  id="listItemsJson"
+                  rows="8"
+                  spellcheck="false"
+                  placeholder='[{"title":"Season","subtitleTemplate":"AVG ..."}]'
+                ></textarea>
+                <div class="list-items-actions">
+                  <button id="listItemsAddRowBtn" type="button">Add Row</button>
+                  <button id="listItemsRemoveRowBtn" type="button" class="danger">Remove Row</button>
+                </div>
+                <label for="listItemImagePath">Item Image Path</label>
+                <input id="listItemImagePath" type="text" />
+                <label for="listItemImageAltTemplate">Item Image Alt Template</label>
+                <input id="listItemImageAltTemplate" type="text" />
+                <label for="listItemImageWidth">Item Image Width</label>
+                <input id="listItemImageWidth" type="text" placeholder="24px" />
+                <label for="listItemImageHeight">Item Image Height</label>
+                <input id="listItemImageHeight" type="text" placeholder="24px" />
+                <label for="listMaxItems">Max Items</label>
+                <input id="listMaxItems" type="number" min="1" step="1" />
+                <label for="listItemTitleTemplate">Item Title Template</label>
+                <textarea id="listItemTitleTemplate" rows="2"></textarea>
+                <label for="listItemSubtitleTemplate">Item Subtitle Template</label>
+                <textarea
+                  id="listItemSubtitleTemplate"
+                  rows="2"
+                  placeholder="{% raw %}AVG {{item.seasonAvg|default:item.seasonStats.avg|default:--}} | OPS {{item.seasonOps|default:item.seasonStats.ops|default:--}} | HR {{item.seasonHomeRuns|default:item.seasonStats.homeRuns|default:--}} | RBI {{item.seasonRbi|default:item.seasonStats.rbi|default:--}}{% endraw %}"
+                ></textarea>
+                <label for="listItemTitleFontSize">Item Title Font Size</label>
+                <input id="listItemTitleFontSize" type="text" placeholder="0.72rem" />
+                <label for="listItemTitleColor">Item Title Color</label>
+                <input id="listItemTitleColor" type="text" placeholder="payload.theme.text.muted" />
+                <label for="listItemTitleAlign">Item Title Text Align</label>
+                <select id="listItemTitleAlign">
+                  <option value="">Inherit</option>
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                  <option value="start">Start</option>
+                  <option value="end">End</option>
+                </select>
+                <label for="listItemSubtitleFontSize">Item Subtitle Font Size</label>
+                <input id="listItemSubtitleFontSize" type="text" placeholder="1.02rem" />
+                <label for="listItemSubtitleColor">Item Subtitle Color</label>
+                <input id="listItemSubtitleColor" type="text" placeholder="payload.theme.text.title" />
+                <label for="listItemSubtitleAlign">Item Subtitle Text Align</label>
+                <select id="listItemSubtitleAlign">
+                  <option value="">Inherit</option>
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                  <option value="start">Start</option>
+                  <option value="end">End</option>
+                </select>
+                <label for="listEmptyText">Empty Text</label>
+                <input id="listEmptyText" type="text" />
+                <label for="listStaggerMs">Stagger (ms)</label>
+                <input id="listStaggerMs" type="number" min="0" step="10" />
+              </div>
+
+              <div class="kind-fields" id="kindBarFields">
+                <h3>Bar Fields</h3>
+                <label for="barValue">Value</label>
+                <input id="barValue" type="text" />
+                <label for="barValuePath">Value Path</label>
+                <input id="barValuePath" type="text" />
+                <label for="barMaxValue">Max Value</label>
+                <input id="barMaxValue" type="number" min="1" step="1" />
+                <label for="barLabelTemplate">Label Template</label>
+                <input id="barLabelTemplate" type="text" />
+              </div>
+
+              <div class="kind-fields">
+                <h3>Style JSON</h3>
+                <label for="elementStyleJson">Style Object</label>
+                <textarea id="elementStyleJson" rows="4" spellcheck="false"></textarea>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel preview-panel">
+        <div class="panel-head">
+          <h2>Preview + Key Finder</h2>
+          <p id="saveStatus" class="panel-subtitle">No pending changes.</p>
+        </div>
+        <div id="previewLayout" class="preview-layout">
+          <section class="canvas-panel">
+            <div class="canvas-controls">
+              <label class="canvas-toggle" for="canvasShowGrid">
+                <input id="canvasShowGrid" type="checkbox" checked />
+                Show grid
+              </label>
+              <label class="canvas-toggle" for="canvasSnapToggle">
+                <input id="canvasSnapToggle" type="checkbox" checked />
+                Snap
+              </label>
+              <label for="canvasSnapStep">Snap step</label>
+              <select id="canvasSnapStep">
+                <option value="0.5">0.5%</option>
+                <option value="1" selected>1%</option>
+                <option value="2">2%</option>
+              </select>
+              <label class="canvas-toggle" for="previewLargeMode">
+                <input id="previewLargeMode" type="checkbox" checked />
+                Large preview
+              </label>
+              <p class="canvas-target">Target: 1280x720</p>
+              <p id="canvasReadout" class="canvas-readout">No element selected. (Target 1280x720)</p>
+            </div>
+            <div id="canvasStage" class="canvas-stage grid-on" aria-label="Drag and resize stage">
+              <div id="canvasBackground" class="canvas-background"></div>
+              <div id="canvasOverlay" class="canvas-overlay"></div>
+              <div id="canvasElements" class="canvas-elements"></div>
+            </div>
+            <p class="canvas-help">Drag element blocks to move. Drag the corner handle to resize. Readout includes % plus px at 1280x720.</p>
+          </section>
+
+          <section class="runtime-panel">
+            <div class="runtime-controls">
+              <button id="refreshRuntimeDataBtn" type="button">Refresh Data</button>
+              <button id="playRuntimePreviewBtn" type="button" class="primary">Play Slide</button>
+              <label for="keySourceSelect">Keys From</label>
+              <select id="keySourceSelect">
+                <option value="payload" selected>payload</option>
+                <option value="external">external</option>
+                <option value="slidePayload">slidePayload</option>
+                <option value="slide">slide</option>
+                <option value="vars">vars</option>
+                <option value="endpoint">endpoint</option>
+                <option value="kiosk">kiosk</option>
+                <option value="state">state</option>
+                <option value="scoreboard">scoreboard</option>
+              </select>
+              <input id="keySearchInput" type="text" placeholder="Filter keys (example: players or weather)" />
+            </div>
+            <p id="runtimeSlideLabel" class="panel-subtitle">Runtime preview not loaded yet.</p>
+            <div class="runtime-scrub">
+              <label for="runtimeScrubSlider">Preview Time</label>
+              <input id="runtimeScrubSlider" type="range" min="0" max="0" step="0.1" value="0" disabled />
+              <output id="runtimeScrubValue" for="runtimeScrubSlider">0.0s / 0.0s</output>
+            </div>
+            <div id="runtimePreviewStage" class="runtime-preview-stage" aria-label="Rendered runtime preview"></div>
+            <div class="key-finder-wrap">
+              <p class="key-finder-title">Data Explorer (click rows to expand)</p>
+              <div id="keyFinderList" class="key-finder-list"></div>
+            </div>
+          </section>
+        </div>
+        <textarea id="jsonPreview" rows="14" spellcheck="false" readonly></textarea>
+      </section>
+    </main>
+
+    <script src="/static/editor.js?v={{ editor_asset_version }}"></script>
+  </body>
+</html>

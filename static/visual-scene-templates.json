@@ -1,0 +1,1656 @@
+{
+  "enabled": true,
+  "slideTransitionMs": 750,
+  "elementDefaults": {
+    "enter": {
+      "effect": "slide-up",
+      "durationMs": 750,
+      "delayMs": 0,
+      "easing": "cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    "exit": {
+      "effect": "fade",
+      "durationMs": 460,
+      "delayMs": 0,
+      "easing": "ease"
+    }
+  },
+  "templates": {
+    "game_today": {
+      "apiEndpoint": "/api/team/{{vars.teamId}}/games?date={{vars.date}}",
+      "apiVariables": {
+        "date": "2026-04-24",
+        "teamId": "110"
+      },
+      "background": {
+        "blendMode": "normal",
+        "color": "{{payload.theme.gradient}}",
+        "motionDurationMs": 26000,
+        "overlay": "{{payload.theme.overlay}}",
+        "overlayMotionDurationMs": 22000
+      },
+      "elements": [
+        {
+          "className": "scene-title",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 760,
+            "delayMs": 140,
+            "easing": "ease"
+          },
+          "h": "13.00%",
+          "kind": "text",
+          "text": "{{img:payload.games.0.team.logoUrls.capOnDark}} TODAY's game - {{payload.date|date:weekday}}",
+          "textFontSize": "3.5em",
+          "w": "56.00%",
+          "x": "4.00%",
+          "y": "5.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 120,
+            "easing": "ease"
+          },
+          "h": "15.00%",
+          "kind": "text",
+          "text": "({{payload.games.0.away.record.wins}} - {{payload.games.0.away.record.losses}}){{img:payload.games.0.away.logoUrls.capOnDark|2em}}@{{img:payload.games.0.home.logoUrls.capOnDark|2em}}({{payload.games.0.home.record.wins}} - {{payload.games.0.home.record.losses}})",
+          "textFontSize": "3rem",
+          "w": "56.00%",
+          "x": "5.00%",
+          "y": "18.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-right",
+            "durationMs": 700,
+            "delayMs": 120,
+            "easing": "ease"
+          },
+          "h": "9.00%",
+          "kind": "text",
+          "text": "{{img:payload.games.0.away.logoUrls.capOnDark|1.35em}} {{payload.games.0.away.probablePitcher.fullName|default:TBD}}",
+          "textFontSize": "2.5rem",
+          "w": "55.00%",
+          "x": "4.00%",
+          "y": "69.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-right",
+            "durationMs": 700,
+            "delayMs": 120,
+            "easing": "ease"
+          },
+          "h": "10.00%",
+          "kind": "text",
+          "text": "{{img:payload.games.0.home.logoUrls.capOnDark|1.35em}} {{payload.games.0.home.probablePitcher.fullName|default:TBD}}",
+          "textFontSize": "2.5rem",
+          "w": "55.00%",
+          "x": "4.00%",
+          "y": "82.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-down",
+            "durationMs": 700,
+            "delayMs": 1500,
+            "easing": "ease"
+          },
+          "h": "6.00%",
+          "kind": "text",
+          "text": "ERA {{payload.games.0.away.probablePitcher.era|default:--}} | FIP {{payload.games.0.away.probablePitcher.fip|default:--}} | WHIP {{payload.games.0.away.probablePitcher.whip|default:--}}",
+          "textFontSize": "2rem",
+          "w": "49.00%",
+          "x": "10.00%",
+          "y": "76.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-down",
+            "durationMs": 700,
+            "delayMs": 1500,
+            "easing": "ease"
+          },
+          "h": "6.00%",
+          "kind": "text",
+          "text": "ERA {{payload.games.0.home.probablePitcher.era|default:--}} | FIP {{payload.games.0.home.probablePitcher.fip|default:--}} | WHIP {{payload.games.0.home.probablePitcher.whip|default:--}}",
+          "textFontSize": "2rem",
+          "w": "49.00%",
+          "x": "10.00%",
+          "y": "89.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "columns": 1,
+          "enter": {
+            "effect": "slide-left",
+            "durationMs": 750,
+            "delayMs": 1000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "slide-right",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "exitAfterEnterMs": 10000,
+          "exitBeforeSlideEndMs": 10000,
+          "gridGap": "0.4rem",
+          "h": "90.00%",
+          "itemSubtitleColor": "{{payload.theme.text.body}}",
+          "itemSubtitleFontSize": "1rem",
+          "itemSubtitleTemplate": "AVG {{item.seasonObp|default:item.seasonStats.obp|default:--}} | OPS {{item.seasonOps|default:item.seasonStats.ops|default:--}} | HR {{item.seasonHomeRuns|default:item.seasonStats.homeRuns|default:item.seasonStats.home_runs|default:--}}",
+          "itemTitleColor": "{{payload.theme.text.title}}",
+          "itemTitleFontSize": "1.3rem",
+          "itemTitleTemplate": "#{{item.slot}} {{item.full_name|default:item.fullName|default:item.name|default:TBD}} - {{item.position.abbreviation|default:TBD}}",
+          "itemsPath": "payload.games.0.away.battingOrder.players",
+          "kind": "list",
+          "maxItems": 9,
+          "staggerMs": 70,
+          "titleColor": "{{payload.theme.text.muted}}",
+          "titleFontSize": "2.5rem",
+          "titleTemplate": "{{img:payload.games.0.away.logoUrls.capOnDark|1.5em}} {{payload.games.0.away.abbreviation}} Lineup",
+          "w": "33.00%",
+          "x": "62.00%",
+          "y": "5.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "columns": 1,
+          "enter": {
+            "effect": "slide-left",
+            "durationMs": 750,
+            "delayMs": 11000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "fade",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "gridGap": "0.4rem",
+          "h": "90.00%",
+          "itemSubtitleColor": "{{payload.theme.text.body}}",
+          "itemSubtitleFontSize": "1rem",
+          "itemSubtitleTemplate": "AVG {{item.seasonObp|default:item.seasonStats.obp|default:--}} | OPS {{item.seasonOps|default:item.seasonStats.ops|default:--}} | HR {{item.seasonHomeRuns|default:item.seasonStats.homeRuns|default:item.seasonStats.home_runs|default:--}}",
+          "itemTitleColor": "{{payload.theme.text.title}}",
+          "itemTitleFontSize": "1rem",
+          "itemTitleTemplate": "#{{item.slot}} {{item.full_name|default:item.fullName|default:item.name|default:TBD}} - {{item.position.abbreviation|default:TBD}}",
+          "itemsPath": "payload.games.0.home.battingOrder.players",
+          "kind": "list",
+          "maxItems": 9,
+          "staggerMs": 70,
+          "titleColor": "{{payload.theme.text.muted}}",
+          "titleFontSize": "2.5rem",
+          "titleTemplate": "{{img:payload.games.0.home.logoUrls.capOnDark|1.5em}} {{payload.games.0.home.abbreviation}} Lineup",
+          "w": "33.00%",
+          "x": "62.00%",
+          "y": "5.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-down",
+            "durationMs": 700,
+            "delayMs": 1500,
+            "easing": "ease"
+          },
+          "h": "9.00%",
+          "kind": "text",
+          "text": "{{payload.games.0.bovadaOdds.summary.moneyline.away.impliedProbabilityPercent|percent:0}}",
+          "textColor": "{{payload.theme.text.highlight}}",
+          "textFontSize": "3rem",
+          "w": "12.00%",
+          "x": "17.00%",
+          "y": "32.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-down",
+            "durationMs": 700,
+            "delayMs": 1500,
+            "easing": "ease"
+          },
+          "h": "9.00%",
+          "kind": "text",
+          "text": "{{payload.games.0.bovadaOdds.summary.moneyline.home.impliedProbabilityPercent|percent:0}}",
+          "textColor": "{{payload.theme.text.highlight}}",
+          "textFontSize": "3rem",
+          "w": "12.00%",
+          "x": "29.00%",
+          "y": "32.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-right",
+            "durationMs": 700,
+            "delayMs": 120,
+            "easing": "ease"
+          },
+          "h": "13.00%",
+          "kind": "text",
+          "text": "{{payload.games.0.venue}}",
+          "textFontSize": "3rem",
+          "w": "55.00%",
+          "x": "5.00%",
+          "y": "46.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-down",
+            "durationMs": 700,
+            "delayMs": 1500,
+            "easing": "ease"
+          },
+          "h": "8.00%",
+          "kind": "text",
+          "text": "{{payload.games.0.weather.cityState}} | {{payload.games.0.weather.condition}} - {{payload.games.0.weather.temperatureF}} \u00b0F",
+          "textFontSize": "2rem",
+          "w": "55.00%",
+          "x": "5.00%",
+          "y": "55.00%"
+        }
+      ],
+      "name": "Game Today",
+      "transitionIn": {
+        "effect": "slide-left",
+        "durationMs": 760,
+        "delayMs": 0,
+        "easing": "cubic-bezier(0.22, 1, 0.36, 1)"
+      },
+      "transitionOut": {
+        "effect": "fade",
+        "durationMs": 520,
+        "delayMs": 0,
+        "easing": "ease"
+      }
+    },
+    "live_game_status": {
+      "background": {
+        "blendMode": "normal",
+        "color": "{{payload.theme.gradient|default:linear-gradient(135deg, #151b25 0%, #26384f 52%, #111821 100%)}}",
+        "motionDurationMs": 24000,
+        "overlay": "{{payload.theme.overlay|default:linear-gradient(95deg, rgba(8, 10, 14, 0.92) 0%, rgba(20, 25, 34, 0.72) 46%, rgba(8, 10, 14, 0.30) 100%)}}",
+        "overlayMotionDurationMs": 20000
+      },
+      "elements": [
+        {
+          "className": "scene-kicker",
+          "enter": {
+            "effect": "slide-down",
+            "durationMs": 680,
+            "delayMs": 70,
+            "easing": "ease"
+          },
+          "h": "12.00%",
+          "kind": "text",
+          "text": "LIVE GAME CENTER {{img:payload.team.logoUrls.capOnDark|1.5em}}",
+          "textColor": "{{payload.theme.text.muted|default:#d4dde8}}",
+          "textFontSize": "3.4rem",
+          "w": "58.00%",
+          "x": "4.00%",
+          "y": "5.00%"
+        },
+        {
+          "changeKey": "score",
+          "className": "scene-title",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 720,
+            "delayMs": 150,
+            "easing": "ease"
+          },
+          "h": "19.00%",
+          "kind": "text",
+          "text": "{{img:payload.away.logoUrls.capOnDark|2.1em|mode=cap}} {{payload.score.away.runs|default:0}} - {{payload.score.home.runs|default:0}} {{img:payload.home.logoUrls.capOnDark|2.1em|mode=cap}}",
+          "textColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "textFontSize": "4.0rem",
+          "w": "38.00%",
+          "x": "4.00%",
+          "y": "17.00%"
+        },
+        {
+          "changeKey": "inning",
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-right",
+            "durationMs": 680,
+            "delayMs": 300,
+            "easing": "ease"
+          },
+          "h": "8.00%",
+          "kind": "text",
+          "text": "{{payload.inning.label|default:Inning TBD}}",
+          "textColor": "{{payload.theme.text.highlight|default:#ffd57a}}",
+          "textFontSize": "2.2rem",
+          "w": "50.00%",
+          "x": "4.00%",
+          "y": "38.00%"
+        },
+        {
+          "changeKey": "count.balls",
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 380,
+            "easing": "ease"
+          },
+          "h": "6.00%",
+          "kind": "text",
+          "text": "Balls {{img:payload.indicators.count.balls.0.icon|0.9em}} {{img:payload.indicators.count.balls.1.icon|0.9em}} {{img:payload.indicators.count.balls.2.icon|0.9em}} {{img:payload.indicators.count.balls.3.icon|0.9em}}",
+          "textColor": "{{payload.theme.text.body|default:#dce5f1}}",
+          "textFontSize": "1.7rem",
+          "w": "50.00%",
+          "x": "4.00%",
+          "y": "45.00%"
+        },
+        {
+          "changeKey": "count.strikes",
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 430,
+            "easing": "ease"
+          },
+          "h": "6.00%",
+          "kind": "text",
+          "text": "Strikes {{img:payload.indicators.count.strikes.0.icon|0.9em}} {{img:payload.indicators.count.strikes.1.icon|0.9em}} {{img:payload.indicators.count.strikes.2.icon|0.9em}}",
+          "textColor": "{{payload.theme.text.body|default:#dce5f1}}",
+          "textFontSize": "1.7rem",
+          "w": "50.00%",
+          "x": "4.00%",
+          "y": "50.00%"
+        },
+        {
+          "changeKey": "count.outs",
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 480,
+            "easing": "ease"
+          },
+          "h": "6.00%",
+          "kind": "text",
+          "text": "Outs {{img:payload.indicators.count.outs.0.icon|0.9em}} {{img:payload.indicators.count.outs.1.icon|0.9em}} {{img:payload.indicators.count.outs.2.icon|0.9em}}",
+          "textColor": "{{payload.theme.text.body|default:#dce5f1}}",
+          "textFontSize": "1.7rem",
+          "w": "50.00%",
+          "x": "4.00%",
+          "y": "55.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 420,
+            "easing": "ease"
+          },
+          "h": "8.00%",
+          "kind": "text",
+          "text": "Pitcher: {{payload.currentPitcher.fullName|default:TBD}}",
+          "textColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "textFontSize": "1.9rem",
+          "w": "50.00%",
+          "x": "4.00%",
+          "y": "62.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 520,
+            "easing": "ease"
+          },
+          "h": "8.00%",
+          "kind": "text",
+          "text": "Batter: {{payload.currentBatter.fullName|default:TBD}}",
+          "textColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "textFontSize": "1.9rem",
+          "w": "50.00%",
+          "x": "4.00%",
+          "y": "68.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 620,
+            "easing": "ease"
+          },
+          "h": "8.00%",
+          "kind": "text",
+          "text": "On deck: {{payload.onDeck.fullName|default:TBD}}",
+          "textColor": "{{payload.theme.text.body|default:#dce5f1}}",
+          "textFontSize": "1.6rem",
+          "w": "50.00%",
+          "x": "4.00%",
+          "y": "74.00%"
+        },
+        {
+          "changeKey": "base.first",
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 720,
+            "easing": "ease"
+          },
+          "h": "9.00%",
+          "kind": "text",
+          "style": {
+            "text-align": "center"
+          },
+          "text": "{{img:payload.indicators.bases.first.icon|1.0em}} 1B",
+          "textColor": "{{payload.theme.text.body|default:#dce5f1}}",
+          "textFontSize": "1.8rem",
+          "w": "10.00%",
+          "x": "5.00%",
+          "y": "83.00%"
+        },
+        {
+          "changeKey": "base.first",
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 760,
+            "easing": "ease"
+          },
+          "h": "6.00%",
+          "kind": "text",
+          "style": {
+            "text-align": "center"
+          },
+          "text": "{{payload.indicators.bases.first.runnerLastName|default:--}}",
+          "textColor": "{{payload.theme.text.body|default:#dce5f1}}",
+          "textFontSize": "1.35rem",
+          "w": "14.00%",
+          "x": "3.00%",
+          "y": "90.00%"
+        },
+        {
+          "changeKey": "base.second",
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 730,
+            "easing": "ease"
+          },
+          "h": "9.00%",
+          "kind": "text",
+          "style": {
+            "text-align": "center"
+          },
+          "text": "{{img:payload.indicators.bases.second.icon|1.0em}} 2B",
+          "textColor": "{{payload.theme.text.body|default:#dce5f1}}",
+          "textFontSize": "1.8rem",
+          "w": "10.00%",
+          "x": "19.00%",
+          "y": "83.00%"
+        },
+        {
+          "changeKey": "base.second",
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 770,
+            "easing": "ease"
+          },
+          "h": "6.00%",
+          "kind": "text",
+          "style": {
+            "text-align": "center"
+          },
+          "text": "{{payload.indicators.bases.second.runnerLastName|default:--}}",
+          "textColor": "{{payload.theme.text.body|default:#dce5f1}}",
+          "textFontSize": "1.35rem",
+          "w": "14.00%",
+          "x": "17.00%",
+          "y": "90.00%"
+        },
+        {
+          "changeKey": "base.third",
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 740,
+            "easing": "ease"
+          },
+          "h": "9.00%",
+          "kind": "text",
+          "style": {
+            "text-align": "center"
+          },
+          "text": "{{img:payload.indicators.bases.third.icon|1.0em}} 3B",
+          "textColor": "{{payload.theme.text.body|default:#dce5f1}}",
+          "textFontSize": "1.8rem",
+          "w": "10.00%",
+          "x": "33.00%",
+          "y": "83.00%"
+        },
+        {
+          "changeKey": "base.third",
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 700,
+            "delayMs": 780,
+            "easing": "ease"
+          },
+          "h": "6.00%",
+          "kind": "text",
+          "style": {
+            "text-align": "center"
+          },
+          "text": "{{payload.indicators.bases.third.runnerLastName|default:--}}",
+          "textColor": "{{payload.theme.text.body|default:#dce5f1}}",
+          "textFontSize": "1.35rem",
+          "w": "14.00%",
+          "x": "31.00%",
+          "y": "90.00%"
+        }
+      ],
+      "name": "Live Game Status",
+      "transitionIn": {
+        "effect": "slide-left",
+        "durationMs": 760,
+        "delayMs": 0,
+        "easing": "cubic-bezier(0.22, 1, 0.36, 1)"
+      },
+      "transitionOut": {
+        "effect": "fade",
+        "durationMs": 520,
+        "delayMs": 0,
+        "easing": "ease"
+      }
+    },
+    "player_breakdown": {
+      "apiEndpoint": "/player/{{vars.playerId}}?date={{vars.date}}&gameId={{vars.gameId}}",
+      "apiVariables": {
+        "date": "{{state.generatedAtUtc}}",
+        "gameId": "{{state.kiosk.nextGame.gamePk}}",
+        "playerId": "{{slide.payload.playerId}}"
+      },
+      "background": {
+        "blendMode": "normal",
+        "color": "{{payload.theme.gradient}}",
+        "overlay": "{{payload.theme.overlay}}",
+        "position": "89% 48%",
+        "size": "34%"
+      },
+      "elements": [
+        {
+          "className": "scene-kicker scene-player-kicker",
+          "enter": {
+            "effect": "zoom",
+            "durationMs": 700,
+            "delayMs": 60,
+            "easing": "ease"
+          },
+          "h": "19.00%",
+          "kind": "text",
+          "text": "PLAYER BREAKDOWN {{img:payload.team.logoUrls.capOnDark|2em}}",
+          "textColor": "{{payload.theme.text.muted}}",
+          "textFontSize": "3rem",
+          "w": "76.00%",
+          "x": "5.00%",
+          "y": "5.00%"
+        },
+        {
+          "className": "scene-title scene-player-title",
+          "enter": {
+            "effect": "zoom",
+            "durationMs": 740,
+            "delayMs": 130,
+            "easing": "ease"
+          },
+          "h": "14.00%",
+          "kind": "text",
+          "text": "{{payload.profile.display_name|default:payload.profile.full_name}}",
+          "textColor": "{{payload.theme.text.title}}",
+          "textFontSize": "3.5rem",
+          "w": "45.00%",
+          "x": "5.00%",
+          "y": "18.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "columns": 1,
+          "emptyText": "{{payload.lineups.message}}",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 1000,
+            "delayMs": 1000,
+            "easing": "ease"
+          },
+          "h": "63.00%",
+          "itemImageAltTemplate": "{{item.opponent_abbreviation}} logo",
+          "itemImageHeight": "48",
+          "itemImagePath": "item.opponent_logo_urls.capOnDark",
+          "itemImageWidth": "48",
+          "itemSubtitleColor": "{{payload.theme.text.body}}",
+          "itemSubtitleFontSize": "1.25rem",
+          "itemSubtitleTemplate": "{{item.batting_summary}}",
+          "itemTitleColor": "{{payload.theme.text.title}}",
+          "itemTitleFontSize": "1.5rem",
+          "itemTitleTemplate": "{{item.official_date|date:short}}",
+          "itemsPath": "payload.lineups.recentBattingOrders",
+          "kind": "grid",
+          "maxItems": 4,
+          "staggerMs": 60,
+          "titleColor": "{{payload.theme.text.muted}}",
+          "titleFontSize": "2rem",
+          "titleTemplate": "Recent Games",
+          "w": "38.00%",
+          "x": "31.00%",
+          "y": "32.00%"
+        },
+        {
+          "alt": "{{payload.profile.display_name|default:payload.profile.full_name}}",
+          "enter": {
+            "effect": "zoom",
+            "durationMs": 840,
+            "delayMs": 230,
+            "easing": "ease"
+          },
+          "h": "90.00%",
+          "kind": "image",
+          "srcPath": "payload.profile.photoUrls.headshot",
+          "w": "25.00%",
+          "x": "70.00%",
+          "y": "5.00%"
+        },
+        {
+          "className": "scene-metrics-block",
+          "columns": 3,
+          "emptyText": "No player stats available",
+          "enter": {
+            "effect": "slide-right",
+            "durationMs": 1000,
+            "delayMs": 1000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "slide-left",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "exitAfterEnterMs": 10000,
+          "exitBeforeSlideEndMs": 10000,
+          "gridAlignX": "stretch",
+          "gridAlignY": "stretch",
+          "gridGap": "0.36rem",
+          "h": "47.00%",
+          "itemSubtitleColor": "{{payload.theme.text.title}}",
+          "itemSubtitleFontSize": "2rem",
+          "itemTitleColor": "{{payload.theme.text.muted}}",
+          "itemTitleFontSize": "1.5rem",
+          "items": [
+            {
+              "subtitleTemplate": "{{payload.stats.batterSeason.plate_appearances|default:--}}",
+              "title": "PA",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterSeason.games_played|default:--}}",
+              "title": "G",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterSeason.avg|default:--}}",
+              "title": "AVG",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterSeason.obp|default:--}}",
+              "title": "OBP",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterSeason.slg|default:--}}",
+              "title": "SLG",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterSeason.ops|default:--}}",
+              "title": "OPS",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterSeason.home_runs|default:--}}",
+              "title": "HR",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterSeason.k_percent|percent:1|default:--}}",
+              "title": "K%",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterSeason.bb_percent|percent:1|default:--}}",
+              "title": "BB%",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherSeason.era|default:--}}",
+              "title": "ERA",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherSeason.whip|default:--}}",
+              "title": "WHIP",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherSeason.fip|default:--}}",
+              "title": "FIP",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherSeason.strike_outs|default:--}}",
+              "title": "SO",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherSeason.k_percent|percent:1|default:--}}",
+              "title": "K %",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherSeason.bb_percent|percent:1|default:--}}",
+              "title": "BB %",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherSeason.wins|default:--}}",
+              "title": "W",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherSeason.losses|default:--}}",
+              "title": "L",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherSeason.innings_pitched|default:--}}",
+              "title": "IP",
+              "when": "payload.stats.isPitcher"
+            }
+          ],
+          "kind": "grid",
+          "maxItems": 9,
+          "staggerMs": 45,
+          "text": "New text",
+          "titleColor": "{{payload.theme.text.muted}}",
+          "titleFontSize": "2rem",
+          "titleTemplate": "Stats - Season",
+          "w": "25.00%",
+          "x": "5.00%",
+          "y": "32.00%"
+        },
+        {
+          "className": "scene-metrics-block",
+          "columns": 3,
+          "emptyText": "No player stats available",
+          "enter": {
+            "effect": "slide-right",
+            "durationMs": 750,
+            "delayMs": 11000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "fade",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "gridAlignX": "stretch",
+          "gridAlignY": "stretch",
+          "gridGap": "0.4rem",
+          "h": "47.00%",
+          "itemSubtitleColor": "{{payload.theme.text.title}}",
+          "itemSubtitleFontSize": "2rem",
+          "itemTitleColor": "{{payload.theme.text.muted}}",
+          "itemTitleFontSize": "1.5rem",
+          "items": [
+            {
+              "subtitleTemplate": "{{payload.stats.batterLastTenGames.plate_appearances|default:--}}",
+              "title": "PA",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterLastTenGames.games_played|default:--}}",
+              "title": "G",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterLastTenGames.avg|default:--}}",
+              "title": "AVG",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterLastTenGames.obp|default:--}}",
+              "title": "OBP",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterLastTenGames.slg|default:--}}",
+              "title": "SLG",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterLastTenGames.ops|default:--}}",
+              "title": "OPS",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterLastTenGames.home_runs|default:--}}",
+              "title": "HR",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterLastTenGames.k_percent|percent:1|default:--}}",
+              "title": "K%",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.batterLastTenGames.bb_percent|percent:1|default:--}}",
+              "title": "BB%",
+              "when": "!payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherLastTenGames.era|default:--}}",
+              "title": "ERA",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherLastTenGames.whip|default:--}}",
+              "title": "WHIP",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherLastTenGames.fip|default:--}}",
+              "title": "FIP",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherLastTenGames.strike_outs|default:--}}",
+              "title": "SO",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherLastTenGames.k_percent|percent:1|default:--}}",
+              "title": "K %",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherLastTenGames.bb_percent|percent:1|default:--}}",
+              "title": "BB %",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherLastTenGames.wins|default:--}}",
+              "title": "W",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherLastTenGames.losses|default:--}}",
+              "title": "L",
+              "when": "payload.stats.isPitcher"
+            },
+            {
+              "subtitleTemplate": "{{payload.stats.pitcherLastTenGames.innings_pitched|default:--}}",
+              "title": "IP",
+              "when": "payload.stats.isPitcher"
+            }
+          ],
+          "kind": "grid",
+          "maxItems": 9,
+          "staggerMs": 45,
+          "text": "New text",
+          "titleColor": "{{payload.theme.text.muted}}",
+          "titleFontSize": "2rem",
+          "titleTemplate": "Stats - Recent",
+          "w": "25.00%",
+          "x": "5.00%",
+          "y": "32.00%"
+        }
+      ],
+      "transitionIn": {
+        "effect": "slide-left",
+        "durationMs": 760,
+        "delayMs": 0,
+        "easing": "cubic-bezier(0.22, 1, 0.36, 1)"
+      },
+      "transitionOut": {
+        "effect": "fade",
+        "durationMs": 520,
+        "delayMs": 0,
+        "easing": "ease"
+      }
+    },
+    "schedule_overview": {
+      "apiEndpoint": "/api/visual-scenes/team/{{vars.teamId}}/schedule-overview?startDate={{vars.startDate}}&maxGames={{vars.maxGames}}&daysAhead={{vars.daysAhead}}",
+      "apiVariables": {
+        "daysAhead": "14",
+        "maxGames": "6",
+        "startDate": "{{state.generatedAtUtc|date:iso}}",
+        "teamId": "{{slide.payload.teamId|default:state.teamId|default:135}}"
+      },
+      "background": {
+        "blendMode": "normal",
+        "color": "{{payload.theme.gradient|default:state.kiosk.nextGame.team.theme.gradient|default:linear-gradient(135deg, #1c1f24 0%, #2a3242 52%, #12161f 100%)}}",
+        "image": "{{payload.games.0.teamLogoUrls.primary|default:payload.logoUrls.primary}}",
+        "motionDurationMs": 26000,
+        "overlay": "{{payload.theme.overlay|default:state.kiosk.nextGame.team.theme.overlay|default:linear-gradient(92deg, rgba(8, 10, 14, 0.92) 0%, rgba(20, 25, 34, 0.72) 46%, rgba(8, 10, 14, 0.28) 100%)}}",
+        "overlayMotionDurationMs": 22000,
+        "position": "104% 56%",
+        "repeat": "no-repeat",
+        "size": "36%"
+      },
+      "elements": [
+        {
+          "className": "scene-kicker",
+          "enter": {
+            "effect": "slide-down",
+            "durationMs": 720,
+            "delayMs": 70,
+            "easing": "ease"
+          },
+          "h": "16.00%",
+          "kind": "text",
+          "text": "Upcoming games{{img:payload.logoUrls.capOnDark|1.7em}}",
+          "textColor": "{{payload.theme.text.muted|default:#d6dee8}}",
+          "textFontSize": "4rem",
+          "w": "67.00%",
+          "x": "5.00%",
+          "y": "5.00%"
+        },
+        {
+          "className": "scene-title",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 760,
+            "delayMs": 210,
+            "easing": "ease"
+          },
+          "h": "21.00%",
+          "kind": "text",
+          "text": "{{payload.teamName|default:state.teamName}}  ({{payload.teamRecord.wins|default:--}}-{{payload.teamRecord.losses|default:--}})",
+          "textColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "textFontSize": "3rem",
+          "w": "59.00%",
+          "x": "5.00%",
+          "y": "19.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "enter": {
+            "effect": "slide-right",
+            "durationMs": 750,
+            "delayMs": 1000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "slide-right",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "gridGap": "0.2rem",
+          "h": "71.00%",
+          "itemImageAltTemplate": "{{item.opponentName|default:Opponent}} logo",
+          "itemImageHeight": "64",
+          "itemImagePath": "item.opponentLogoUrls.capOnDark",
+          "itemImageWidth": "64",
+          "itemStyle": {
+            "background": "{{payload.theme.cards.panelBackground|default:rgba(18, 22, 30, 0.60)}}",
+            "border": "1px solid {{payload.theme.cards.panelBorder|default:rgba(180, 188, 199, 0.45)}}"
+          },
+          "itemSubtitleColor": "{{payload.theme.text.body|default:#dbe3ee}}",
+          "itemSubtitleFontSize": "1.5rem",
+          "itemSubtitleTemplate": "{{item.officialDate|date:weekday}} {{item.gameDate|date:time}} |  {{item.venue}}",
+          "itemTitleColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "itemTitleFontSize": "2rem",
+          "itemTitleTemplate": "{{item.homeAway}} | {{item.opponentName}} ({{item.opponentRecord.wins|default:--}}-{{item.opponentRecord.losses|default:--}})",
+          "itemsPath": "payload.games",
+          "kind": "list",
+          "maxItems": 5,
+          "staggerMs": 65,
+          "titleColor": "{{payload.theme.text.muted|default:#c1cad7}}",
+          "titleFontSize": "2rem",
+          "w": "63.00%",
+          "x": "4.00%",
+          "y": "28.00%"
+        }
+      ],
+      "name": "Schedule Overview",
+      "transitionIn": {
+        "effect": "slide-left",
+        "durationMs": 760,
+        "delayMs": 0,
+        "easing": "cubic-bezier(0.22, 1, 0.36, 1)"
+      },
+      "transitionOut": {
+        "effect": "fade",
+        "durationMs": 520,
+        "delayMs": 0,
+        "easing": "ease"
+      }
+    },
+    "team_hitting_leaders": {
+      "apiEndpoint": "/api/visual-scenes/team/{{vars.teamId}}/hitting-leaders?count={{vars.count}}&qualified={{vars.qualified}}&categories={{vars.categories}}",
+      "apiVariables": {
+        "categories": "ops,avg,homeRuns,kPercentLow",
+        "count": "5",
+        "qualified": "true",
+        "teamId": "{{slide.payload.teamId|default:state.teamId|default:135}}"
+      },
+      "background": {
+        "blendMode": "normal",
+        "color": "{{payload.theme.gradient|default:state.kiosk.nextGame.team.theme.gradient|default:linear-gradient(135deg, #161b22 0%, #22354f 55%, #10141a 100%)}}",
+        "image": "{{payload.logoUrls.primary}}",
+        "motionDurationMs": 26000,
+        "overlay": "{{payload.theme.overlay|default:state.kiosk.nextGame.team.theme.overlay|default:linear-gradient(92deg, rgba(8, 10, 14, 0.92) 0%, rgba(20, 25, 34, 0.72) 46%, rgba(8, 10, 14, 0.28) 100%)}}",
+        "overlayMotionDurationMs": 22000,
+        "position": "106% 50%",
+        "repeat": "no-repeat",
+        "size": "42%"
+      },
+      "elements": [
+        {
+          "className": "scene-kicker",
+          "enter": {
+            "effect": "slide-down",
+            "durationMs": 700,
+            "delayMs": 80,
+            "easing": "ease"
+          },
+          "h": "14.00%",
+          "kind": "text",
+          "text": "HITTING LEADERS {{img:payload.logoUrls.capOnDark|1.6em}}",
+          "textColor": "{{payload.theme.text.muted|default:#cdd6e2}}",
+          "textFontSize": "4rem",
+          "w": "73.00%",
+          "x": "5.00%",
+          "y": "5.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-right",
+            "durationMs": 700,
+            "delayMs": 360,
+            "easing": "ease"
+          },
+          "h": "8.00%",
+          "kind": "text",
+          "text": "Qualified Batters (PA >= {{payload.qualification.hitter.minPlateAppearances|default:--}})",
+          "textColor": "{{payload.theme.text.body|default:#e7edf5}}",
+          "textFontSize": "2rem",
+          "w": "62.00%",
+          "x": "5.00%",
+          "y": "16.00%"
+        },
+        {
+          "alt": "{{payload.leadersByCategory.ops.0.displayName|default:payload.leadersByCategory.ops.0.name|default:Leader}} headshot",
+          "className": "scene-reveal-hero-image",
+          "enter": {
+            "effect": "zoom",
+            "durationMs": 820,
+            "delayMs": 260,
+            "easing": "ease"
+          },
+          "h": "70.00%",
+          "kind": "image",
+          "srcPath": "payload.leadersByCategory.ops.0.headshotUrl",
+          "w": "32.00%",
+          "when": "payload.leadersByCategory.ops.0.playerId",
+          "x": "55.00%",
+          "y": "26.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "continuousReveal": true,
+          "emptyText": "No qualified hitters",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 750,
+            "delayMs": 1000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "fade",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "exitAfterEnterMs": 7000,
+          "exitBeforeSlideEndMs": 22000,
+          "gridGap": "0.4rem",
+          "h": "69.00%",
+          "itemImageHeight": "32",
+          "itemImageWidth": "32",
+          "itemStyle": {
+            "background": "{{payload.theme.cards.panelBackground|default:rgba(17, 23, 31, 0.60)}}",
+            "border": "1px solid {{payload.theme.cards.panelBorder|default:rgba(182, 190, 203, 0.45)}}"
+          },
+          "itemSubtitleColor": "{{payload.theme.text.body|default:#e5edf7}}",
+          "itemSubtitleFontSize": "1.5rem",
+          "itemSubtitleTemplate": "OPS {{item.ops|default:--}} | PA {{item.plateAppearances|default:item.plate_appearances|default:--}}",
+          "itemTitleColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "itemTitleFontSize": "1.5rem",
+          "itemTitleTemplate": "#{{index}} {{item.displayName|default:item.name}} - {{item.position|default:--}}",
+          "itemsPath": "payload.leadersByCategory.ops",
+          "kind": "list",
+          "maxItems": 5,
+          "revealFadeMs": 440,
+          "revealHighlightColor": "{{payload.theme.text.highlight|default:#ffd57a}}",
+          "revealImageAltTemplate": "{{item.displayName|default:item.name|default:Leader}} headshot",
+          "revealImageFadeMs": 300,
+          "revealImagePath": "item.headshotUrl",
+          "revealImageSelector": ".scene-reveal-hero-image",
+          "revealIntervalMs": 750,
+          "revealOrder": "reverse",
+          "revealSettledColor": "#ffffff",
+          "revealStartDelayMs": 160,
+          "staggerMs": 750,
+          "titleColor": "{{payload.theme.text.muted|default:#c7d1dd}}",
+          "titleFontSize": "3rem",
+          "titleTemplate": "OPS Leaders",
+          "w": "37.00%",
+          "x": "5.00%",
+          "y": "24.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "continuousReveal": true,
+          "emptyText": "No qualified hitters",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 750,
+            "delayMs": 8000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "fade",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "exitAfterEnterMs": 7000,
+          "exitBeforeSlideEndMs": 15000,
+          "gridGap": "0.30rem",
+          "h": "69.00%",
+          "itemImageHeight": "20",
+          "itemImageWidth": "20",
+          "itemStyle": {
+            "background": "{{payload.theme.cards.panelBackground|default:rgba(17, 23, 31, 0.60)}}",
+            "border": "1px solid {{payload.theme.cards.panelBorder|default:rgba(182, 190, 203, 0.45)}}"
+          },
+          "itemSubtitleColor": "{{payload.theme.text.body|default:#e5edf7}}",
+          "itemSubtitleFontSize": "1.5rem",
+          "itemSubtitleTemplate": "AVG {{item.avg|default:--}} | PA {{item.plateAppearances|default:item.plate_appearances|default:--}}",
+          "itemTitleColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "itemTitleFontSize": "1.5rem",
+          "itemTitleTemplate": "#{{index}} {{item.displayName|default:item.name}} - {{item.position|default:--}}",
+          "itemsPath": "payload.leadersByCategory.avg",
+          "kind": "list",
+          "maxItems": 5,
+          "revealFadeMs": 440,
+          "revealHighlightColor": "{{payload.theme.text.highlight|default:#ffd57a}}",
+          "revealImageAltTemplate": "{{item.displayName|default:item.name|default:Leader}} headshot",
+          "revealImageFadeMs": 300,
+          "revealImagePath": "item.headshotUrl",
+          "revealImageSelector": ".scene-reveal-hero-image",
+          "revealIntervalMs": 750,
+          "revealOrder": "reverse",
+          "revealSettledColor": "#ffffff",
+          "revealStartDelayMs": 160,
+          "staggerMs": 750,
+          "titleColor": "{{payload.theme.text.muted|default:#c7d1dd}}",
+          "titleFontSize": "3rem",
+          "titleTemplate": "AVG Leaders",
+          "w": "37.00%",
+          "x": "5.00%",
+          "y": "24.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "continuousReveal": true,
+          "emptyText": "No qualified hitters",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 750,
+            "delayMs": 15000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "fade",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "exitAfterEnterMs": 7000,
+          "exitBeforeSlideEndMs": 8000,
+          "gridGap": "0.30rem",
+          "h": "69.00%",
+          "itemImageHeight": "20",
+          "itemImageWidth": "20",
+          "itemStyle": {
+            "background": "{{payload.theme.cards.panelBackground|default:rgba(17, 23, 31, 0.60)}}",
+            "border": "1px solid {{payload.theme.cards.panelBorder|default:rgba(182, 190, 203, 0.45)}}"
+          },
+          "itemSubtitleColor": "{{payload.theme.text.body|default:#e5edf7}}",
+          "itemSubtitleFontSize": "1.5rem",
+          "itemSubtitleTemplate": "HR {{item.homeRuns|default:--}} | PA {{item.plateAppearances|default:item.plate_appearances|default:--}}",
+          "itemTitleColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "itemTitleFontSize": "1.5rem",
+          "itemTitleTemplate": "#{{index}} {{item.displayName|default:item.name}} - {{item.position|default:--}}",
+          "itemsPath": "payload.leadersByCategory.homeRuns",
+          "kind": "list",
+          "maxItems": 5,
+          "revealFadeMs": 440,
+          "revealHighlightColor": "{{payload.theme.text.highlight|default:#ffd57a}}",
+          "revealImageAltTemplate": "{{item.displayName|default:item.name|default:Leader}} headshot",
+          "revealImageFadeMs": 300,
+          "revealImagePath": "item.headshotUrl",
+          "revealImageSelector": ".scene-reveal-hero-image",
+          "revealIntervalMs": 750,
+          "revealOrder": "reverse",
+          "revealSettledColor": "#ffffff",
+          "revealStartDelayMs": 160,
+          "staggerMs": 750,
+          "titleColor": "{{payload.theme.text.muted|default:#c7d1dd}}",
+          "titleFontSize": "3rem",
+          "titleTemplate": "HR Leaders",
+          "w": "37.00%",
+          "x": "5.00%",
+          "y": "24.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "continuousReveal": true,
+          "emptyText": "No qualified hitters",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 750,
+            "delayMs": 22000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "fade",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "gridGap": "0.30rem",
+          "h": "69.00%",
+          "itemImageHeight": "20",
+          "itemImageWidth": "20",
+          "itemStyle": {
+            "background": "{{payload.theme.cards.statBackground|default:rgba(11, 16, 23, 0.66)}}",
+            "border": "1px solid {{payload.theme.cards.statBorder|default:rgba(182, 190, 203, 0.52)}}"
+          },
+          "itemSubtitleColor": "{{payload.theme.text.body|default:#e5edf7}}",
+          "itemSubtitleFontSize": "1.5rem",
+          "itemSubtitleTemplate": "K% {{item.kPercent|percent:1|default:--}} | PA {{item.plateAppearances|default:item.plate_appearances|default:--}}",
+          "itemTitleColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "itemTitleFontSize": "1.5rem",
+          "itemTitleTemplate": "#{{index}} {{item.displayName|default:item.name}} - {{item.position|default:--}}",
+          "itemsPath": "payload.leadersByCategory.kPercentLow",
+          "kind": "list",
+          "maxItems": 5,
+          "revealFadeMs": 440,
+          "revealHighlightColor": "{{payload.theme.text.highlight|default:#ffd57a}}",
+          "revealImageAltTemplate": "{{item.displayName|default:item.name|default:Leader}} headshot",
+          "revealImageFadeMs": 300,
+          "revealImagePath": "item.headshotUrl",
+          "revealImageSelector": ".scene-reveal-hero-image",
+          "revealIntervalMs": 750,
+          "revealOrder": "reverse",
+          "revealSettledColor": "#ffffff",
+          "revealStartDelayMs": 160,
+          "staggerMs": 750,
+          "titleColor": "{{payload.theme.text.muted|default:#c7d1dd}}",
+          "titleFontSize": "3rem",
+          "titleTemplate": "K% Leaders",
+          "w": "37.00%",
+          "x": "5.00%",
+          "y": "24.00%"
+        }
+      ],
+      "name": "Team Hitting Leaders",
+      "transitionIn": {
+        "effect": "slide-left",
+        "durationMs": 760,
+        "delayMs": 0,
+        "easing": "cubic-bezier(0.22, 1, 0.36, 1)"
+      },
+      "transitionOut": {
+        "effect": "fade",
+        "durationMs": 520,
+        "delayMs": 0,
+        "easing": "ease"
+      }
+    },
+    "team_pitching_leaders": {
+      "apiEndpoint": "/api/visual-scenes/team/{{vars.teamId}}/pitching-leaders?count={{vars.count}}&qualified={{vars.qualified}}&categories={{vars.categories}}",
+      "apiVariables": {
+        "categories": "fip,era,strikeouts,kPercentHigh",
+        "count": "5",
+        "qualified": "false",
+        "teamId": "{{slide.payload.teamId|default:state.teamId|default:135}}"
+      },
+      "background": {
+        "blendMode": "normal",
+        "color": "{{payload.theme.gradient|default:state.kiosk.nextGame.team.theme.gradient|default:linear-gradient(135deg, #161b22 0%, #22354f 55%, #10141a 100%)}}",
+        "image": "{{payload.logoUrls.primary}}",
+        "motionDurationMs": 26000,
+        "overlay": "{{payload.theme.overlay|default:state.kiosk.nextGame.team.theme.overlay|default:linear-gradient(92deg, rgba(8, 10, 14, 0.92) 0%, rgba(20, 25, 34, 0.72) 46%, rgba(8, 10, 14, 0.28) 100%)}}",
+        "overlayMotionDurationMs": 22000,
+        "position": "106% 50%",
+        "repeat": "no-repeat",
+        "size": "42%"
+      },
+      "elements": [
+        {
+          "className": "scene-kicker",
+          "enter": {
+            "effect": "slide-down",
+            "durationMs": 700,
+            "delayMs": 80,
+            "easing": "ease"
+          },
+          "h": "16.00%",
+          "kind": "text",
+          "text": "PITCHING LEADERS {{img:payload.logoUrls.capOnDark|1.6em}}",
+          "textColor": "{{payload.theme.text.muted|default:#cdd6e2}}",
+          "textFontSize": "4rem",
+          "w": "71.00%",
+          "x": "5.00%",
+          "y": "5.00%"
+        },
+        {
+          "className": "scene-subtitle",
+          "enter": {
+            "effect": "slide-right",
+            "durationMs": 700,
+            "delayMs": 360,
+            "easing": "ease"
+          },
+          "h": "8.00%",
+          "kind": "text",
+          "text": "Qualified Pitchers (IP >= {{payload.qualification.pitcher.activeMinInningsPitched|default:--}})",
+          "textColor": "{{payload.theme.text.body|default:#e7edf5}}",
+          "textFontSize": "2rem",
+          "w": "62.00%",
+          "x": "5.00%",
+          "y": "16.00%"
+        },
+        {
+          "alt": "{{payload.leadersByCategory.fip.0.displayName|default:payload.leadersByCategory.fip.0.name|default:Leader}} headshot",
+          "className": "scene-reveal-hero-image",
+          "enter": {
+            "effect": "zoom",
+            "durationMs": 820,
+            "delayMs": 260,
+            "easing": "ease"
+          },
+          "h": "70.00%",
+          "kind": "image",
+          "srcPath": "payload.leadersByCategory.fip.0.headshotUrl",
+          "w": "32.00%",
+          "when": "payload.leadersByCategory.fip.0.playerId",
+          "x": "56.00%",
+          "y": "25.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "continuousReveal": true,
+          "emptyText": "No qualified pitchers",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 750,
+            "delayMs": 1000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "fade",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "exitAfterEnterMs": 7000,
+          "exitBeforeSlideEndMs": 22000,
+          "gridGap": "0.4rem",
+          "h": "69.00%",
+          "itemImageHeight": "32",
+          "itemImageWidth": "32",
+          "itemStyle": {
+            "background": "{{payload.theme.cards.panelBackground|default:rgba(17, 23, 31, 0.60)}}",
+            "border": "1px solid {{payload.theme.cards.panelBorder|default:rgba(182, 190, 203, 0.45)}}"
+          },
+          "itemSubtitleColor": "{{payload.theme.text.body|default:#e5edf7}}",
+          "itemSubtitleFontSize": "1.5rem",
+          "itemSubtitleTemplate": "FIP {{item.fip|default:--}} | IP {{item.inningsPitched|default:--}}",
+          "itemTitleColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "itemTitleFontSize": "1.5rem",
+          "itemTitleTemplate": "#{{index}} {{item.displayName|default:item.name}}",
+          "itemsPath": "payload.leadersByCategory.fip",
+          "kind": "list",
+          "maxItems": 5,
+          "revealFadeMs": 440,
+          "revealHighlightColor": "{{payload.theme.text.highlight|default:#ffd57a}}",
+          "revealImageAltTemplate": "{{item.displayName|default:item.name|default:Leader}} headshot",
+          "revealImageFadeMs": 300,
+          "revealImagePath": "item.headshotUrl",
+          "revealImageSelector": ".scene-reveal-hero-image",
+          "revealIntervalMs": 750,
+          "revealOrder": "reverse",
+          "revealSettledColor": "#ffffff",
+          "revealStartDelayMs": 160,
+          "staggerMs": 750,
+          "titleColor": "{{payload.theme.text.muted|default:#c7d1dd}}",
+          "titleFontSize": "3rem",
+          "titleTemplate": "FIP Leaders",
+          "w": "37.00%",
+          "x": "5.00%",
+          "y": "24.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "continuousReveal": true,
+          "emptyText": "No qualified pitchers",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 750,
+            "delayMs": 8000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "fade",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "exitAfterEnterMs": 7000,
+          "exitBeforeSlideEndMs": 15000,
+          "gridGap": "0.30rem",
+          "h": "69.00%",
+          "itemImageHeight": "20",
+          "itemImageWidth": "20",
+          "itemStyle": {
+            "background": "{{payload.theme.cards.panelBackground|default:rgba(17, 23, 31, 0.60)}}",
+            "border": "1px solid {{payload.theme.cards.panelBorder|default:rgba(182, 190, 203, 0.45)}}"
+          },
+          "itemSubtitleColor": "{{payload.theme.text.body|default:#e5edf7}}",
+          "itemSubtitleFontSize": "1.5rem",
+          "itemSubtitleTemplate": "ERA {{item.era|default:--}} | IP {{item.inningsPitched|default:--}}",
+          "itemTitleColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "itemTitleFontSize": "1.5rem",
+          "itemTitleTemplate": "#{{index}} {{item.displayName|default:item.name}}",
+          "itemsPath": "payload.leadersByCategory.era",
+          "kind": "list",
+          "maxItems": 5,
+          "revealFadeMs": 440,
+          "revealHighlightColor": "{{payload.theme.text.highlight|default:#ffd57a}}",
+          "revealImageAltTemplate": "{{item.displayName|default:item.name|default:Leader}} headshot",
+          "revealImageFadeMs": 300,
+          "revealImagePath": "item.headshotUrl",
+          "revealImageSelector": ".scene-reveal-hero-image",
+          "revealIntervalMs": 750,
+          "revealOrder": "reverse",
+          "revealSettledColor": "#ffffff",
+          "revealStartDelayMs": 160,
+          "staggerMs": 750,
+          "titleColor": "{{payload.theme.text.muted|default:#c7d1dd}}",
+          "titleFontSize": "3rem",
+          "titleTemplate": "ERA Leaders",
+          "w": "37.00%",
+          "x": "5.00%",
+          "y": "24.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "continuousReveal": true,
+          "emptyText": "No qualified pitchers",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 750,
+            "delayMs": 15000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "fade",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "exitAfterEnterMs": 7000,
+          "exitBeforeSlideEndMs": 8000,
+          "gridGap": "0.30rem",
+          "h": "69.00%",
+          "itemImageHeight": "20",
+          "itemImageWidth": "20",
+          "itemStyle": {
+            "background": "{{payload.theme.cards.panelBackground|default:rgba(17, 23, 31, 0.60)}}",
+            "border": "1px solid {{payload.theme.cards.panelBorder|default:rgba(182, 190, 203, 0.45)}}"
+          },
+          "itemSubtitleColor": "{{payload.theme.text.body|default:#e5edf7}}",
+          "itemSubtitleFontSize": "1.5rem",
+          "itemSubtitleTemplate": "SO {{item.strikeouts|default:--}} | K% {{item.kPercent|percent:1|default:item.kPercentDisplay|default:--}}",
+          "itemTitleColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "itemTitleFontSize": "1.5rem",
+          "itemTitleTemplate": "#{{index}} {{item.displayName|default:item.name}}",
+          "itemsPath": "payload.leadersByCategory.strikeouts",
+          "kind": "list",
+          "maxItems": 5,
+          "revealFadeMs": 440,
+          "revealHighlightColor": "{{payload.theme.text.highlight|default:#ffd57a}}",
+          "revealImageAltTemplate": "{{item.displayName|default:item.name|default:Leader}} headshot",
+          "revealImageFadeMs": 300,
+          "revealImagePath": "item.headshotUrl",
+          "revealImageSelector": ".scene-reveal-hero-image",
+          "revealIntervalMs": 750,
+          "revealOrder": "reverse",
+          "revealSettledColor": "#ffffff",
+          "revealStartDelayMs": 160,
+          "staggerMs": 750,
+          "titleColor": "{{payload.theme.text.muted|default:#c7d1dd}}",
+          "titleFontSize": "3rem",
+          "titleTemplate": "K Leaders",
+          "w": "37.00%",
+          "x": "5.00%",
+          "y": "24.00%"
+        },
+        {
+          "className": "scene-lineup-block",
+          "continuousReveal": true,
+          "emptyText": "No qualified pitchers",
+          "enter": {
+            "effect": "slide-up",
+            "durationMs": 750,
+            "delayMs": 22000,
+            "easing": "ease"
+          },
+          "exit": {
+            "effect": "fade",
+            "durationMs": 750,
+            "delayMs": 0,
+            "easing": "ease"
+          },
+          "gridGap": "0.30rem",
+          "h": "69.00%",
+          "itemImageHeight": "20",
+          "itemImageWidth": "20",
+          "itemStyle": {
+            "background": "{{payload.theme.cards.statBackground|default:rgba(11, 16, 23, 0.66)}}",
+            "border": "1px solid {{payload.theme.cards.statBorder|default:rgba(182, 190, 203, 0.52)}}"
+          },
+          "itemSubtitleColor": "{{payload.theme.text.body|default:#e5edf7}}",
+          "itemSubtitleFontSize": "1.5rem",
+          "itemSubtitleTemplate": "K% {{item.kPercent|percent:1|default:item.kPercentDisplay|default:--}} | SO {{item.strikeouts|default:--}}",
+          "itemTitleColor": "{{payload.theme.text.title|default:#f8fbff}}",
+          "itemTitleFontSize": "1.5rem",
+          "itemTitleTemplate": "#{{index}} {{item.displayName|default:item.name}}",
+          "itemsPath": "payload.leadersByCategory.kPercentHigh",
+          "kind": "list",
+          "maxItems": 5,
+          "revealFadeMs": 440,
+          "revealHighlightColor": "{{payload.theme.text.highlight|default:#ffd57a}}",
+          "revealImageAltTemplate": "{{item.displayName|default:item.name|default:Leader}} headshot",
+          "revealImageFadeMs": 300,
+          "revealImagePath": "item.headshotUrl",
+          "revealImageSelector": ".scene-reveal-hero-image",
+          "revealIntervalMs": 750,
+          "revealOrder": "reverse",
+          "revealSettledColor": "#ffffff",
+          "revealStartDelayMs": 160,
+          "staggerMs": 750,
+          "titleColor": "{{payload.theme.text.muted|default:#c7d1dd}}",
+          "titleFontSize": "3rem",
+          "titleTemplate": "K% Leaders",
+          "w": "37.00%",
+          "x": "5.00%",
+          "y": "24.00%"
+        }
+      ],
+      "name": "Team Pitching Leaders",
+      "transitionIn": {
+        "effect": "slide-left",
+        "durationMs": 760,
+        "delayMs": 0,
+        "easing": "cubic-bezier(0.22, 1, 0.36, 1)"
+      },
+      "transitionOut": {
+        "effect": "fade",
+        "durationMs": 520,
+        "delayMs": 0,
+        "easing": "ease"
+      }
+    }
+  }
+}

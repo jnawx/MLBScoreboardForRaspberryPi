@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "rotationSeconds": 14,
+  "slides": [
+    {
+      "id": "status",
+      "type": "status",
+      "title": "Game Pulse",
+      "durationSeconds": 10
+    },
+    {
+      "id": "previous-game",
+      "type": "previous_game_pbp",
+      "title": "Previous Game Story",
+      "durationSeconds": 18
+    },
+    {
+      "id": "featured-player",
+      "type": "featured_player",
+      "title": "Jake Cronenworth Breakdown",
+      "durationSeconds": 22
+    }
+  ]
+}

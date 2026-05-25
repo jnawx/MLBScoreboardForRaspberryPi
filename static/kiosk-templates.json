@@ -1,0 +1,70 @@
+{
+  "enabled": true,
+  "defaultDurationSeconds": 14,
+  "templates": [
+    {
+      "durationSeconds": 30,
+      "enabled": true,
+      "highlightLimit": 12,
+      "id": "live-game-status",
+      "pinWhenLive": true,
+      "title": "Live Game Center",
+      "type": "live_game_status"
+    },
+    {
+      "durationSeconds": 16,
+      "enabled": true,
+      "id": "upcoming-game",
+      "maxGames": 1,
+      "title": "Upcoming Game",
+      "type": "schedule_overview"
+    },
+    {
+      "count": 5,
+      "durationSeconds": 30,
+      "enabled": true,
+      "id": "padres-hitting",
+      "team": "padres",
+      "title": "Padres Hitting Leaders",
+      "type": "team_hitting_leaders"
+    },
+    {
+      "count": 5,
+      "durationSeconds": 30,
+      "enabled": true,
+      "id": "padres-pitching",
+      "team": "padres",
+      "title": "Padres Pitching Leaders",
+      "type": "team_pitching_leaders"
+    },
+    {
+      "count": 5,
+      "durationSeconds": 30,
+      "enabled": true,
+      "id": "opponent-hitting",
+      "team": "opponent",
+      "title": "Opponent Hitting Leaders",
+      "type": "team_hitting_leaders"
+    },
+    {
+      "count": 5,
+      "durationSeconds": 30,
+      "enabled": true,
+      "id": "opponent-pitching",
+      "team": "opponent",
+      "title": "Opponent Pitching Leaders",
+      "type": "team_pitching_leaders"
+    },
+    {
+      "count": 3,
+      "durationSeconds": 20,
+      "enabled": true,
+      "id": "padres-player-breakdowns",
+      "missingStatValue": "N/A",
+      "statPreset": "balanced",
+      "team": "padres",
+      "title": "Padres Breakdown",
+      "type": "player_breakdowns"
+    }
+  ]
+}

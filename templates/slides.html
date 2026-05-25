@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Padres Slides</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css?v={{ slides_asset_version }}" />
+  </head>
+  <body class="slides-only-page low-power-mode keep-transitions">
+    <main class="slides-only-layout">
+      <section class="slide-shell slides-only-shell">
+        <div id="slidesRenderViewport" class="slides-render-viewport">
+          <div id="slideContainer" class="slide-container slides-only-container">
+            <p class="slide-empty">Loading slide content...</p>
+          </div>
+
+          <aside id="liveGameHighlightPanel" class="slides-live-highlight-panel hidden" aria-live="polite">
+            <div class="slides-live-highlight-video-wrap">
+              <video id="mainVideo" autoplay playsinline controls></video>
+              <div id="noVideoMessage" class="empty-message hidden"></div>
+            </div>
+            <div class="slides-live-highlight-copy">
+              <p id="liveGameHighlightTitle" class="slides-live-highlight-title">Live game highlights</p>
+              <p id="liveGameHighlightMeta" class="slides-live-highlight-meta">Waiting for clips...</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <div class="hidden" aria-hidden="true">
+      <p id="modeBadge"></p>
+      <p id="awayName"></p>
+      <p id="awayAbbrev"></p>
+      <p id="homeName"></p>
+      <p id="homeAbbrev"></p>
+      <p id="awayRuns"></p>
+      <p id="homeRuns"></p>
+      <p id="awayStats"></p>
+      <p id="homeStats"></p>
+      <p id="statusLine"></p>
+      <p id="detailLine"></p>
+      <p id="clipTitle"></p>
+      <p id="clipMeta"></p>
+      <p id="updateStamp"></p>
+      <p id="slideName"></p>
+    </div>
+
+    <script>
+      window.PADRES_BOARD_STATE_URL = "/api/state/slides";
+      window.PADRES_BOARD_LOW_POWER = true;
+      window.PADRES_BOARD_POLL_INTERVAL_MS = 15000;
+      window.PADRES_BOARD_TEMPLATE_POLL_INTERVAL_MS = 15000;
+      window.PADRES_BOARD_TEMPLATE_SLIDE_TTL_MS = 180000;
+      window.PADRES_BOARD_TARGET_WIDTH = 1280;
+      window.PADRES_BOARD_TARGET_HEIGHT = 720;
+      window.PADRES_BOARD_ALLOW_UPSCALE = false;
+      window.PADRES_BOARD_FONT_SCALE = 1.22;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="/static/app.js?v={{ slides_asset_version }}"></script>
+  </body>
+</html>

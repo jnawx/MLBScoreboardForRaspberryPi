@@ -1,0 +1,42 @@
+services:
+  mlb-scoreboard:
+    image: ghcr.io/jnawx/mlbscoreboardforraspberrypi:latest
+    container_name: mlb-scoreboard
+    user: "${MLB_SCOREBOARD_UID:-0}:${MLB_SCOREBOARD_GID:-0}"
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8080
+      TEAM_ID: "${TEAM_ID:-135}"
+      TEAM_NAME: "${TEAM_NAME:-San Diego Padres}"
+      LIVE_STREAM_URL: "${LIVE_STREAM_URL:-}"
+      KIOSK_ENABLED: "${KIOSK_ENABLED:-1}"
+      DATABASE_PATH: /app/data/scoreboard.db
+      KIOSK_LAYOUT_FILE: /app/config/kiosk-slides.json
+      KIOSK_TEMPLATE_FILE: /app/config/kiosk-templates.json
+      VISUAL_SCENE_TEMPLATE_FILE: /app/config/visual-scene-templates.json
+      AUTO_UPDATE_ENABLED: "${AUTO_UPDATE_ENABLED:-1}"
+      AUTO_UPDATE_RUN_ON_START: "${AUTO_UPDATE_RUN_ON_START:-1}"
+      AUTO_UPDATE_INTERVAL_SECONDS: "${AUTO_UPDATE_INTERVAL_SECONDS:-86400}"
+      AUTO_UPDATE_TIMEOUT_SECONDS: "${AUTO_UPDATE_TIMEOUT_SECONDS:-3300}"
+      AUTO_UPDATE_EXTRA_ARGS: "${AUTO_UPDATE_EXTRA_ARGS:-}"
+      SCHEDULE_SEASONS: "${SCHEDULE_SEASONS:-2026}"
+      STATS_SEASON: "${STATS_SEASON:-2026}"
+      BY_PARK_SEASONS: "${BY_PARK_SEASONS:-2024,2025,2026}"
+    volumes:
+      - /mnt/data/mlb-scoreboard/data:/app/data
+      - /mnt/data/mlb-scoreboard/config:/app/config
+    networks:
+      - homelab_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=homelab_network"
+      - "traefik.http.routers.mlb-scoreboard.rule=Host(`${MLB_SCOREBOARD_HOSTNAME:-mlbscoreboard.nawx.app}`)"
+      - "traefik.http.routers.mlb-scoreboard.entrypoints=websecure"
+      - "traefik.http.routers.mlb-scoreboard.tls=true"
+      - "traefik.http.routers.mlb-scoreboard.tls.certresolver=letsencrypt"
+      - "traefik.http.services.mlb-scoreboard.loadbalancer.server.port=8080"
+
+networks:
+  homelab_network:
+    external: true
