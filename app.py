@@ -7117,7 +7117,37 @@ def load_kiosk_template_editor_config() -> Dict[str, Any]:
         parsed_templates.append(parsed)
 
     config["templates"] = parsed_templates
+    ensure_required_template(config, "game_today", after_type="live_game_status")
     return config
+
+
+def ensure_required_template(config: Dict[str, Any], template_type: str, after_type: str = "") -> None:
+    templates = config.get("templates")
+    if not isinstance(templates, list):
+        return
+
+    if any(isinstance(template, dict) and template.get("type") == template_type for template in templates):
+        return
+
+    default_template = next(
+        (
+            copy.deepcopy(template)
+            for template in DEFAULT_SLIDE_TEMPLATE_CONFIG.get("templates", [])
+            if isinstance(template, dict) and template.get("type") == template_type
+        ),
+        None,
+    )
+    if not isinstance(default_template, dict):
+        return
+
+    insert_index = len(templates)
+    if after_type:
+        for index, template in enumerate(templates):
+            if isinstance(template, dict) and template.get("type") == after_type:
+                insert_index = index + 1
+                break
+
+    templates.insert(insert_index, default_template)
 
 
 def validate_kiosk_template_config(payload: Any) -> Optional[str]:

@@ -12,6 +12,14 @@
       "type": "live_game_status"
     },
     {
+      "durationSeconds": 14,
+      "enabled": true,
+      "id": "game-today",
+      "maxGames": 2,
+      "title": "Game Today",
+      "type": "game_today"
+    },
+    {
       "durationSeconds": 16,
       "enabled": true,
       "id": "upcoming-game",
