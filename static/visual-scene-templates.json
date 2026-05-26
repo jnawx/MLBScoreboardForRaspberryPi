@@ -20,7 +20,7 @@
       "apiEndpoint": "/api/team/{{vars.teamId}}/games?date={{vars.date}}",
       "apiVariables": {
         "date": "{{state.localDate|default:payload.date|default:state.generatedAtUtc|date:iso}}",
-        "teamId": "110"
+        "teamId": "{{slide.payload.teamId|default:state.teamId|default:135}}"
       },
       "background": {
         "blendMode": "normal",

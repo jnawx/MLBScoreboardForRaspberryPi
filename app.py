@@ -377,6 +377,7 @@ PLAYER_NEWS_MAX_HEADLINES = env_int("PLAYER_NEWS_MAX_HEADLINES", 8)
 PLAYER_GAME_LOG_FALLBACK_CACHE_TTL_SECONDS = env_int("PLAYER_GAME_LOG_FALLBACK_CACHE_TTL_SECONDS", 600)
 PLAYER_PROPS_FALLBACK_CACHE_TTL_SECONDS = env_int("PLAYER_PROPS_FALLBACK_CACHE_TTL_SECONDS", 240)
 PLAYER_DISPLAY_NAME_CACHE_TTL_SECONDS = env_int("PLAYER_DISPLAY_NAME_CACHE_TTL_SECONDS", 21600)
+DEFAULT_FIP_CONSTANT = safe_float(os.getenv("FIP_CONSTANT"), 3.1)
 
 BETTINGPROS_API_KEY = os.getenv(
     "BETTINGPROS_API_KEY",
@@ -1436,6 +1437,99 @@ def display_stat_value(row: Any, key: str, fallback: str = "--") -> str:
 
     formatted = format_decimal_stat_value(key, row.get(key))
     return display_value(formatted, fallback)
+
+
+def stat_has_numeric_value(stats_row: Optional[Dict[str, Any]], keys: Iterable[str]) -> bool:
+    if not isinstance(stats_row, dict):
+        return False
+
+    for key in keys:
+        if parse_numeric_value(stats_row.get(str(key or "").strip())) is not None:
+            return True
+    return False
+
+
+def pitcher_innings_decimal(stats_row: Optional[Dict[str, Any]]) -> float:
+    if not isinstance(stats_row, dict):
+        return 0.0
+
+    outs_recorded = first_numeric_field(stats_row, ["outs_recorded", "outsRecorded"])
+    if outs_recorded is not None and outs_recorded > 0:
+        return outs_recorded / 3.0
+
+    for key in ("innings_pitched", "inningsPitched"):
+        if key not in stats_row:
+            continue
+        value = stats_row.get(key)
+        if value is None:
+            continue
+        innings_value = innings_to_decimal(str(value))
+        if innings_value > 0:
+            return innings_value
+
+    return 0.0
+
+
+def calculate_pitcher_fip_component(stats_row: Optional[Dict[str, Any]]) -> Optional[float]:
+    if not isinstance(stats_row, dict):
+        return None
+
+    innings_value = pitcher_innings_decimal(stats_row)
+    if innings_value <= 0:
+        return None
+
+    home_runs = first_numeric_field(stats_row, ["home_runs", "homeRuns"]) or 0.0
+    walks = first_numeric_field(stats_row, ["walks", "base_on_balls", "baseOnBalls"]) or 0.0
+    hit_batters = first_numeric_field(stats_row, ["hit_batters", "hitBatsmen", "hitByPitch"]) or 0.0
+    strikeouts = first_numeric_field(stats_row, ["strike_outs", "strikeOuts", "strikeouts"]) or 0.0
+
+    return ((13.0 * home_runs) + (3.0 * (walks + hit_batters)) - (2.0 * strikeouts)) / innings_value
+
+
+def estimate_fip_constant_from_season(season_stats: Optional[Dict[str, Any]]) -> float:
+    season_fip = first_numeric_field(season_stats or {}, ["fip"])
+    season_component = calculate_pitcher_fip_component(season_stats)
+    if season_fip is not None and season_component is not None:
+        return season_fip - season_component
+    return DEFAULT_FIP_CONSTANT
+
+
+def calculate_pitcher_fip(stats_row: Optional[Dict[str, Any]], fip_constant: Optional[float] = None) -> Optional[float]:
+    component = calculate_pitcher_fip_component(stats_row)
+    if component is None:
+        return None
+    resolved_constant = DEFAULT_FIP_CONSTANT if fip_constant is None else fip_constant
+    return component + resolved_constant
+
+
+def fill_missing_pitcher_fip(stats_row: Optional[Dict[str, Any]], fip_constant: Optional[float] = None) -> None:
+    if not isinstance(stats_row, dict):
+        return
+    if stat_has_numeric_value(stats_row, ["fip"]):
+        return
+
+    calculated_fip = calculate_pitcher_fip(stats_row, fip_constant)
+    if calculated_fip is None:
+        return
+
+    stats_row["fip"] = f"{calculated_fip:.2f}"
+
+
+def enrich_pitching_fip_values(stat_snapshot: Dict[str, Any]) -> None:
+    if not isinstance(stat_snapshot, dict):
+        return
+
+    pitcher_season = (
+        stat_snapshot.get("pitcherSeason")
+        if isinstance(stat_snapshot.get("pitcherSeason"), dict)
+        else None
+    )
+    fip_constant = estimate_fip_constant_from_season(pitcher_season)
+
+    for split_key in ("pitcherSeason", "pitcherLastTenGames", "pitcherVsRhp", "pitcherVsLhp"):
+        split_stats = stat_snapshot.get(split_key)
+        if isinstance(split_stats, dict):
+            fill_missing_pitcher_fip(split_stats, fip_constant)
 
 
 def display_odds_price(raw_value: Any, fallback: str = "--") -> str:
@@ -3395,6 +3489,10 @@ def attach_lineup_batter_season_stats(
 def build_probable_pitcher_season_stats_payload(pitching_stats: Optional[Dict[str, Any]], season: int) -> Dict[str, Any]:
     era_value = first_present_stat_value(pitching_stats, ["era"], fallback="")
     fip_value = first_present_stat_value(pitching_stats, ["fip"], fallback="")
+    if parse_numeric_value(fip_value) is None:
+        calculated_fip = calculate_pitcher_fip(pitching_stats)
+        if calculated_fip is not None:
+            fip_value = f"{calculated_fip:.2f}"
     whip_value = first_present_stat_value(pitching_stats, ["whip"], fallback="")
 
     available = bool(era_value or fip_value or whip_value)
@@ -5411,6 +5509,12 @@ def build_pitching_leader_rows(
             )
             or "--"
         ).strip() or "--"
+        if parse_numeric_value(fip_text) is None:
+            calculated_fip = calculate_pitcher_fip(db_pitching)
+            if calculated_fip is None:
+                calculated_fip = calculate_pitcher_fip(pitching)
+            if calculated_fip is not None:
+                fip_text = f"{calculated_fip:.2f}"
         whip_text = str(
             first_present_stat_value(
                 pitching,
@@ -6833,6 +6937,7 @@ def generate_slides_from_templates(
             payload = {
                 "date": board_today().isoformat(),
                 "headline": headline,
+                "teamId": theme_team_id,
                 "hasGameToday": game_count > 0,
                 "isDoubleheader": game_count > 1,
                 "gameCount": game_count,
@@ -6898,6 +7003,12 @@ def generate_slides_from_templates(
                     }
                 )
 
+            first_team_record = (
+                copy.deepcopy(payload_games[0].get("teamRecord", {}))
+                if payload_games
+                else {}
+            )
+
             slides.append(
                 {
                     "id": slide_id,
@@ -6909,6 +7020,7 @@ def generate_slides_from_templates(
                         "teamName": team_name,
                         "theme": team_theme_colors(theme_team_id),
                         "logoUrls": team_logo_urls(theme_team_id),
+                        "teamRecord": first_team_record,
                         "games": payload_games,
                         "empty": not bool(payload_games),
                     },
@@ -7591,6 +7703,7 @@ def build_player_database_payload(
 
         stat_snapshot["isPitcher"] = is_pitcher_profile
 
+        enrich_pitching_fip_values(stat_snapshot)
         enrich_k_bb_percentages(stat_snapshot)
 
         batting_order_rows: List[Dict[str, Any]] = []

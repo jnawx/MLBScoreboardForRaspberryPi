@@ -3241,6 +3241,11 @@ function shouldRenderCurrentSlideOnRefresh() {
   if (slideDefinitions.length <= 1) {
     return true;
   }
+  const currentSlide = slideDefinitions[slideIndex % slideDefinitions.length];
+  const template = currentSlide ? getVisualTemplateForSlide(currentSlide) : null;
+  if (template && typeof template === "object" && String(template.apiEndpoint || "").trim()) {
+    return true;
+  }
   return activeSlideType === "live_game_status";
 }
 
