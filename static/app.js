@@ -1041,18 +1041,145 @@ function pruneTemplateRuntimeDataBySlide() {
   }
 }
 
+const playerStatMetadataKeys = new Set([
+  "player_id",
+  "playerId",
+  "season",
+  "team_id",
+  "teamId",
+  "team_name",
+  "teamName",
+  "player_name",
+  "playerName",
+  "split_code",
+  "splitCode",
+  "split_description",
+  "splitDescription",
+  "last_synced_utc",
+  "lastSyncedUtc",
+  "stat_json",
+  "statJson",
+  "source",
+]);
+
+function cloneRuntimeValue(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => cloneRuntimeValue(item));
+  }
+
+  if (value && typeof value === "object") {
+    const cloned = {};
+    for (const [key, childValue] of Object.entries(value)) {
+      cloned[key] = cloneRuntimeValue(childValue);
+    }
+    return cloned;
+  }
+
+  return value;
+}
+
+function runtimeStatRowHasValues(row) {
+  if (!row || typeof row !== "object" || Array.isArray(row)) {
+    return false;
+  }
+
+  for (const [key, value] of Object.entries(row)) {
+    if (playerStatMetadataKeys.has(String(key || "").trim())) {
+      continue;
+    }
+    if (value === null || value === undefined) {
+      continue;
+    }
+    if (typeof value === "boolean" && !value) {
+      continue;
+    }
+    if (typeof value === "string") {
+      const valueText = value.trim();
+      if (!valueText || ["--", "---", ".---", "n/a", "nan", "none", "null"].includes(valueText.toLowerCase())) {
+        continue;
+      }
+    }
+    if (Array.isArray(value) && value.length === 0) {
+      continue;
+    }
+    if (value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0) {
+      continue;
+    }
+    return true;
+  }
+
+  return false;
+}
+
+function mergePlayerStatRow(baseRow, endpointRow) {
+  const baseHasValues = runtimeStatRowHasValues(baseRow);
+  const endpointHasValues = runtimeStatRowHasValues(endpointRow);
+
+  if (!endpointHasValues) {
+    return baseHasValues ? cloneRuntimeValue(baseRow) : {};
+  }
+  if (!baseHasValues) {
+    return cloneRuntimeValue(endpointRow);
+  }
+
+  const merged = cloneRuntimeValue(baseRow);
+  for (const [key, value] of Object.entries(endpointRow || {})) {
+    if (value === null || value === undefined) {
+      continue;
+    }
+    if (typeof value === "string") {
+      const valueText = value.trim();
+      if (!valueText || ["--", "---", ".---", "n/a", "nan", "none", "null"].includes(valueText.toLowerCase())) {
+        continue;
+      }
+    }
+    merged[key] = cloneRuntimeValue(value);
+  }
+  return merged;
+}
+
+function mergePlayerBreakdownPayload(slidePayload, endpointPayload) {
+  const base = slidePayload && typeof slidePayload === "object" ? slidePayload : {};
+  const endpoint = endpointPayload && typeof endpointPayload === "object" ? endpointPayload : {};
+  const merged = {
+    ...cloneRuntimeValue(base),
+    ...cloneRuntimeValue(endpoint),
+  };
+
+  const baseStats = base.stats && typeof base.stats === "object" ? base.stats : {};
+  const endpointStats = endpoint.stats && typeof endpoint.stats === "object" ? endpoint.stats : {};
+  const mergedStats = {
+    ...cloneRuntimeValue(baseStats),
+    ...cloneRuntimeValue(endpointStats),
+  };
+
+  for (const key of ["batterSeason", "batterLastTenGames", "pitcherSeason", "pitcherLastTenGames"]) {
+    mergedStats[key] = mergePlayerStatRow(baseStats[key], endpointStats[key]);
+  }
+
+  if (typeof endpointStats.isPitcher !== "boolean" && typeof baseStats.isPitcher === "boolean") {
+    mergedStats.isPitcher = baseStats.isPitcher;
+  }
+
+  merged.stats = mergedStats;
+  return merged;
+}
+
 function buildVisualRuntimeContext(slide, template = null, payloadOverride = undefined, endpointData = null, statePayload = null) {
   const stateSnapshot = statePayload && typeof statePayload === "object" ? statePayload : latestStatePayload || {};
   const slidePayload = slide?.payload === undefined || slide?.payload === null ? {} : slide.payload;
   const endpointPayload = endpointData && endpointData.payload !== undefined ? endpointData.payload : null;
   const hasEndpoint = Boolean(String(template?.apiEndpoint || "").trim());
+  const isPlayerBreakdown = String(slide?.type || "").trim() === "player_breakdown";
 
   const payload =
     payloadOverride !== undefined
       ? payloadOverride
       : hasEndpoint
         ? endpointPayload !== null && endpointPayload !== undefined
-          ? endpointPayload
+          ? isPlayerBreakdown
+            ? mergePlayerBreakdownPayload(slidePayload, endpointPayload)
+            : endpointPayload
           : slidePayload
         : slidePayload;
 

@@ -1863,6 +1863,244 @@ def build_pitcher_last_ten_games_snapshot(player_id: int, season: int, limit: in
     }
 
 
+def select_stats_group_split(raw_payload: Dict[str, Any], group_name: str) -> Dict[str, Any]:
+    normalized_group = normalize_person_text(group_name).replace(" ", "_")
+    stats_rows = raw_payload.get("stats", []) if isinstance(raw_payload, dict) else []
+
+    for row in stats_rows:
+        if not isinstance(row, dict) or mlb_group_key(row) != normalized_group:
+            continue
+
+        splits = row.get("splits", [])
+        if not isinstance(splits, list):
+            continue
+
+        for split in splits:
+            if not isinstance(split, dict):
+                continue
+            stat = split.get("stat")
+            if isinstance(stat, dict) and stat:
+                return split
+
+    return {}
+
+
+def build_batter_stats_snapshot_from_stat_split(
+    stat_split: Dict[str, Any],
+    season: int,
+    split_code: str,
+    split_description: str,
+    source: str,
+) -> Optional[Dict[str, Any]]:
+    stat = stat_split.get("stat") if isinstance(stat_split.get("stat"), dict) else {}
+    if not stat:
+        return None
+
+    at_bats = safe_int(stat.get("atBats"), 0)
+    walks = safe_int(stat.get("baseOnBalls"), 0)
+    hit_by_pitch = safe_int(stat.get("hitByPitch"), 0)
+    sac_flies = safe_int(stat.get("sacFlies"), 0)
+    plate_appearances = safe_int(stat.get("plateAppearances"), 0)
+    if plate_appearances <= 0:
+        plate_appearances = at_bats + walks + hit_by_pitch + sac_flies
+
+    hits = safe_int(stat.get("hits"), 0)
+    doubles = safe_int(stat.get("doubles"), 0)
+    triples = safe_int(stat.get("triples"), 0)
+    home_runs = safe_int(stat.get("homeRuns"), 0)
+    total_bases = safe_int(stat.get("totalBases"), 0)
+    if total_bases <= 0:
+        total_bases = hits + doubles + (2 * triples) + (3 * home_runs)
+
+    avg = parse_rate(stat.get("avg"), 0.0)
+    obp = parse_rate(stat.get("obp"), parse_rate(stat.get("onBasePercentage"), 0.0))
+    slg = parse_rate(stat.get("slg"), parse_rate(stat.get("sluggingPercentage"), 0.0))
+    ops = parse_rate(stat.get("ops"), 0.0)
+
+    if avg <= 0 and at_bats > 0:
+        avg = hits / at_bats
+
+    obp_denominator = at_bats + walks + hit_by_pitch + sac_flies
+    if obp <= 0 and obp_denominator > 0:
+        obp = (hits + walks + hit_by_pitch) / obp_denominator
+
+    if slg <= 0 and at_bats > 0:
+        slg = total_bases / at_bats
+
+    if ops <= 0 and (obp > 0 or slg > 0):
+        ops = obp + slg
+
+    team = stat_split.get("team") if isinstance(stat_split.get("team"), dict) else {}
+    player = stat_split.get("player") if isinstance(stat_split.get("player"), dict) else {}
+
+    return {
+        "season": season,
+        "team_id": safe_int(team.get("id"), 0),
+        "team_name": str(team.get("name") or "").strip(),
+        "player_id": safe_int(player.get("id"), 0),
+        "player_name": str(player.get("fullName") or "").strip(),
+        "split_code": split_code,
+        "split_description": split_description,
+        "games_played": safe_int(stat.get("gamesPlayed"), safe_int(stat.get("games"), 0)),
+        "at_bats": at_bats,
+        "plate_appearances": plate_appearances,
+        "runs": safe_int(stat.get("runs"), 0),
+        "hits": hits,
+        "doubles": doubles,
+        "triples": triples,
+        "home_runs": home_runs,
+        "rbi": safe_int(stat.get("rbi"), 0),
+        "strike_outs": safe_int(stat.get("strikeOuts"), 0),
+        "walks": walks,
+        "intentional_walks": safe_int(stat.get("intentionalWalks"), 0),
+        "hit_by_pitch": hit_by_pitch,
+        "stolen_bases": safe_int(stat.get("stolenBases"), 0),
+        "caught_stealing": safe_int(stat.get("caughtStealing"), 0),
+        "avg": round(avg, 4),
+        "obp": round(obp, 4),
+        "slg": round(slg, 4),
+        "ops": round(ops, 4),
+        "source": source,
+    }
+
+
+def build_batter_stats_snapshot_from_mlb_stats(
+    player_id: int,
+    season: int,
+    stats_type: str,
+    limit: Optional[int],
+    split_code: str,
+    split_description: str,
+    source: str,
+) -> Optional[Dict[str, Any]]:
+    stats_section = fetch_player_stats_type(player_id, stats_type, season, limit=limit)
+    raw_payload = stats_section.get("raw", {}) if isinstance(stats_section, dict) else {}
+    stat_split = select_stats_group_split(raw_payload if isinstance(raw_payload, dict) else {}, "hitting")
+    snapshot = build_batter_stats_snapshot_from_stat_split(stat_split, season, split_code, split_description, source)
+    if not isinstance(snapshot, dict) or not stat_row_has_values(snapshot):
+        return None
+    return snapshot
+
+
+def build_batter_season_stats_snapshot(player_id: int, season: int) -> Optional[Dict[str, Any]]:
+    return build_batter_stats_snapshot_from_mlb_stats(
+        player_id,
+        season,
+        "season",
+        None,
+        "",
+        "",
+        "mlb_season_fallback",
+    )
+
+
+def build_batter_last_ten_games_snapshot(player_id: int, season: int, limit: int = 10) -> Optional[Dict[str, Any]]:
+    return build_batter_stats_snapshot_from_mlb_stats(
+        player_id,
+        season,
+        "lastXGames",
+        max(1, limit),
+        "last10",
+        "Last Ten Games",
+        "mlb_last_x_games_fallback",
+    )
+
+
+def build_pitcher_stats_snapshot_from_stat_split(
+    stat_split: Dict[str, Any],
+    season: int,
+    split_code: str,
+    split_description: str,
+    source: str,
+) -> Optional[Dict[str, Any]]:
+    stat = stat_split.get("stat") if isinstance(stat_split.get("stat"), dict) else {}
+    if not stat:
+        return None
+
+    outs_recorded = safe_int(stat.get("outs"), 0)
+    if outs_recorded <= 0:
+        innings_value = innings_to_decimal(stat.get("inningsPitched"))
+        if innings_value > 0:
+            outs_recorded = int(round(innings_value * 3.0))
+
+    innings_for_rates = outs_recorded / 3.0 if outs_recorded > 0 else 0.0
+    earned_runs = safe_int(stat.get("earnedRuns"), 0)
+    hits_allowed = safe_int(stat.get("hits"), 0)
+    walks = safe_int(stat.get("baseOnBalls"), 0)
+    strike_outs = safe_int(stat.get("strikeOuts"), 0)
+
+    era = parse_rate(stat.get("era"), 0.0)
+    if era <= 0 and innings_for_rates > 0:
+        era = (earned_runs * 9.0) / innings_for_rates
+
+    whip = parse_rate(stat.get("whip"), 0.0)
+    if whip <= 0 and innings_for_rates > 0:
+        whip = (hits_allowed + walks) / innings_for_rates
+
+    strikeouts_per9 = parse_rate(stat.get("strikeoutsPer9Inn"), 0.0)
+    if strikeouts_per9 <= 0 and innings_for_rates > 0:
+        strikeouts_per9 = (strike_outs * 9.0) / innings_for_rates
+
+    walks_per9 = parse_rate(stat.get("walksPer9Inn"), 0.0)
+    if walks_per9 <= 0 and innings_for_rates > 0:
+        walks_per9 = (walks * 9.0) / innings_for_rates
+
+    fip_value = parse_numeric_value(stat.get("fip"))
+
+    team = stat_split.get("team") if isinstance(stat_split.get("team"), dict) else {}
+    player = stat_split.get("player") if isinstance(stat_split.get("player"), dict) else {}
+
+    return {
+        "season": season,
+        "team_id": safe_int(team.get("id"), 0),
+        "team_name": str(team.get("name") or "").strip(),
+        "player_id": safe_int(player.get("id"), 0),
+        "player_name": str(player.get("fullName") or "").strip(),
+        "split_code": split_code,
+        "split_description": split_description,
+        "games_played": safe_int(stat.get("gamesPlayed"), 0),
+        "games_started": safe_int(stat.get("gamesStarted"), 0),
+        "wins": safe_int(stat.get("wins"), 0),
+        "losses": safe_int(stat.get("losses"), 0),
+        "saves": safe_int(stat.get("saves"), 0),
+        "holds": safe_int(stat.get("holds"), 0),
+        "outs_recorded": outs_recorded,
+        "innings_pitched": outs_to_innings_text(outs_recorded),
+        "hits": hits_allowed,
+        "runs": safe_int(stat.get("runs"), 0),
+        "earned_runs": earned_runs,
+        "home_runs": safe_int(stat.get("homeRuns"), 0),
+        "strike_outs": strike_outs,
+        "walks": walks,
+        "intentional_walks": safe_int(stat.get("intentionalWalks"), 0),
+        "hit_batters": safe_int(stat.get("hitBatsmen"), safe_int(stat.get("hitByPitch"), 0)),
+        "batters_faced": safe_int(stat.get("battersFaced"), 0),
+        "pitches_thrown": safe_int(stat.get("numberOfPitches"), safe_int(stat.get("pitchesThrown"), 0)),
+        "era": round(era, 4),
+        "fip": round(fip_value, 4) if fip_value is not None else None,
+        "whip": round(whip, 4),
+        "strikeouts_per9": round(strikeouts_per9, 4),
+        "walks_per9": round(walks_per9, 4),
+        "source": source,
+    }
+
+
+def build_pitcher_season_stats_snapshot(player_id: int, season: int) -> Optional[Dict[str, Any]]:
+    stats_section = fetch_player_stats_type(player_id, "season", season)
+    raw_payload = stats_section.get("raw", {}) if isinstance(stats_section, dict) else {}
+    stat_split = select_stats_group_split(raw_payload if isinstance(raw_payload, dict) else {}, "pitching")
+    snapshot = build_pitcher_stats_snapshot_from_stat_split(
+        stat_split,
+        season,
+        "",
+        "",
+        "mlb_season_fallback",
+    )
+    if not isinstance(snapshot, dict) or not stat_row_has_values(snapshot):
+        return None
+    return snapshot
+
+
 def fetch_player_hitting_game_log_rows(player_id: int, season: int, limit: int = 8) -> List[Dict[str, Any]]:
     game_log_section = fetch_player_stats_type(player_id, "gameLog", season)
     game_log_payload = game_log_section.get("raw", {}) if isinstance(game_log_section, dict) else {}
@@ -2125,6 +2363,7 @@ def fetch_player_stats_type(
     season: int,
     start_date: Optional[dt.date] = None,
     end_date: Optional[dt.date] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     query: Dict[str, Any] = {
         "stats": stats_type,
@@ -2134,6 +2373,8 @@ def fetch_player_stats_type(
     if start_date and end_date:
         query["startDate"] = start_date.isoformat()
         query["endDate"] = end_date.isoformat()
+    if limit is not None:
+        query["limit"] = max(1, safe_int(limit, 1))
 
     section: Dict[str, Any] = {
         "query": copy.deepcopy(query),
@@ -5822,14 +6063,47 @@ def build_player_breakdown_stat_snapshot_from_team_row(
     }
 
 
+STAT_ROW_METADATA_KEYS = {
+    "player_id",
+    "playerId",
+    "season",
+    "team_id",
+    "teamId",
+    "team_name",
+    "teamName",
+    "player_name",
+    "playerName",
+    "split_code",
+    "splitCode",
+    "split_description",
+    "splitDescription",
+    "last_synced_utc",
+    "lastSyncedUtc",
+    "stat_json",
+    "statJson",
+    "source",
+}
+
+
 def stat_row_has_values(row: Any) -> bool:
     if not isinstance(row, dict):
         return False
 
-    for value in row.values():
+    for key, value in row.items():
+        key_text = str(key or "").strip()
+        if key_text in STAT_ROW_METADATA_KEYS:
+            continue
         if value is None:
             continue
-        if isinstance(value, str) and not value.strip():
+        if isinstance(value, bool) and not value:
+            continue
+        if isinstance(value, str):
+            value_text = value.strip()
+            if not value_text or value_text.lower() in {"--", "---", ".---", "n/a", "nan", "none", "null"}:
+                continue
+        if isinstance(value, list) and not value:
+            continue
+        if isinstance(value, dict) and not value:
             continue
         return True
     return False
@@ -5990,6 +6264,37 @@ def enrich_missing_pitcher_recent_stats_for_player_breakdowns(rows: List[Dict[st
         row["stats"] = stats
 
 
+def enrich_missing_batter_stats_for_player_breakdowns(rows: List[Dict[str, Any]], season: int) -> None:
+    for row in rows:
+        if not isinstance(row, dict) or bool(row.get("isPitcher")):
+            continue
+
+        stats = row.get("stats") if isinstance(row.get("stats"), dict) else {}
+        player_id = safe_int(row.get("playerId"), 0)
+        if player_id <= 0:
+            continue
+
+        season_stats = stats.get("batterSeason") if isinstance(stats.get("batterSeason"), dict) else {}
+        if not stat_row_has_values(season_stats):
+            fallback_season = build_batter_season_stats_snapshot(player_id, season)
+            if isinstance(fallback_season, dict) and stat_row_has_values(fallback_season):
+                stats["batterSeason"] = fallback_season
+
+        recent_stats = (
+            stats.get("batterLastTenGames")
+            if isinstance(stats.get("batterLastTenGames"), dict)
+            else {}
+        )
+        if not stat_row_has_values(recent_stats):
+            fallback_recent = build_batter_last_ten_games_snapshot(player_id, season, limit=10)
+            if isinstance(fallback_recent, dict) and stat_row_has_values(fallback_recent):
+                stats["batterLastTenGames"] = fallback_recent
+
+        stats["isPitcher"] = False
+        enrich_k_bb_percentages(stats)
+        row["stats"] = stats
+
+
 def build_player_breakdowns(
     players: List[Dict[str, Any]],
     previous_player_map: Dict[int, Dict[str, Any]],
@@ -6131,6 +6436,7 @@ def build_player_breakdowns(
 
     selected_rows = hitter_rows[:count]
     if count <= 12:
+        enrich_missing_batter_stats_for_player_breakdowns(selected_rows, season)
         enrich_missing_pitcher_recent_stats_for_player_breakdowns(selected_rows, season)
     for row in selected_rows:
         row.pop("_score", None)
@@ -6196,6 +6502,8 @@ def build_all_qualified_player_breakdowns(
         selected.append(player_payload)
 
     selected.sort(key=lambda row: str(row.get("displayName") or row.get("name") or "").lower())
+    if len(selected) <= 12:
+        enrich_missing_batter_stats_for_player_breakdowns(selected, season)
     enrich_missing_pitcher_recent_stats_for_player_breakdowns(selected, season)
     return selected
 
@@ -7867,7 +8175,13 @@ def build_player_database_payload(
         }
 
         pitcher_season = stat_snapshot.get("pitcherSeason") if isinstance(stat_snapshot.get("pitcherSeason"), dict) else {}
-        if not is_pitcher_profile and pitcher_season:
+        if is_pitcher_profile and not stat_row_has_values(pitcher_season):
+            fallback_pitcher_season = build_pitcher_season_stats_snapshot(player_id, season)
+            if isinstance(fallback_pitcher_season, dict) and stat_row_has_values(fallback_pitcher_season):
+                stat_snapshot["pitcherSeason"] = fallback_pitcher_season
+                pitcher_season = fallback_pitcher_season
+
+        if not is_pitcher_profile and stat_row_has_values(pitcher_season):
             pitching_signal_keys = [
                 "innings_pitched",
                 "batters_faced",
@@ -7883,12 +8197,22 @@ def build_player_database_payload(
                     is_pitcher_profile = True
                     break
 
-        if is_pitcher_profile and not isinstance(stat_snapshot.get("pitcherLastTenGames"), dict):
+        if is_pitcher_profile and not stat_row_has_values(stat_snapshot.get("pitcherLastTenGames")):
             fallback_last_ten = build_pitcher_last_ten_games_snapshot(player_id, season, limit=10)
-            if isinstance(fallback_last_ten, dict):
+            if isinstance(fallback_last_ten, dict) and stat_row_has_values(fallback_last_ten):
                 stat_snapshot["pitcherLastTenGames"] = fallback_last_ten
                 if safe_int(fallback_last_ten.get("games_pitched"), 0) > 0:
                     is_pitcher_profile = True
+        elif not is_pitcher_profile:
+            if not stat_row_has_values(stat_snapshot.get("batterSeason")):
+                fallback_batter_season = build_batter_season_stats_snapshot(player_id, season)
+                if isinstance(fallback_batter_season, dict) and stat_row_has_values(fallback_batter_season):
+                    stat_snapshot["batterSeason"] = fallback_batter_season
+
+            if not stat_row_has_values(stat_snapshot.get("batterLastTenGames")):
+                fallback_batter_recent = build_batter_last_ten_games_snapshot(player_id, season, limit=10)
+                if isinstance(fallback_batter_recent, dict) and stat_row_has_values(fallback_batter_recent):
+                    stat_snapshot["batterLastTenGames"] = fallback_batter_recent
 
         stat_snapshot["isPitcher"] = is_pitcher_profile
 
