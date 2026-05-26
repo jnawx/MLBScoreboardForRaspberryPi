@@ -5822,15 +5822,187 @@ def build_player_breakdown_stat_snapshot_from_team_row(
     }
 
 
+def stat_row_has_values(row: Any) -> bool:
+    if not isinstance(row, dict):
+        return False
+
+    for value in row.values():
+        if value is None:
+            continue
+        if isinstance(value, str) and not value.strip():
+            continue
+        return True
+    return False
+
+
+def merge_player_breakdown_stat_snapshots(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    merged = copy.deepcopy(base) if isinstance(base, dict) else {}
+    source = override if isinstance(override, dict) else {}
+
+    for key in ("batterSeason", "pitcherSeason", "batterLastTenGames", "pitcherLastTenGames"):
+        source_row = source.get(key)
+        if stat_row_has_values(source_row):
+            merged[key] = copy.deepcopy(source_row)
+        else:
+            merged.setdefault(key, {})
+
+    merged["isPitcher"] = bool(merged.get("isPitcher"))
+
+    return merged
+
+
+def load_player_breakdown_stat_snapshots_by_player_ids(player_ids: List[int], season: int) -> Dict[int, Dict[str, Any]]:
+    unique_ids = sorted({safe_int(player_id, 0) for player_id in player_ids if safe_int(player_id, 0) > 0})
+    if not unique_ids:
+        return {}
+
+    database_path = resolve_database_path()
+    if not database_path.exists():
+        return {}
+
+    table_to_snapshot_key = {
+        "batter_stats_season": "batterSeason",
+        "pitcher_stats_season": "pitcherSeason",
+        "batter_stats_last_ten_games": "batterLastTenGames",
+        "pitcher_stats_last_ten_games": "pitcherLastTenGames",
+    }
+
+    snapshots = {
+        player_id: {
+            "batterSeason": {},
+            "pitcherSeason": {},
+            "batterLastTenGames": {},
+            "pitcherLastTenGames": {},
+            "isPitcher": False,
+        }
+        for player_id in unique_ids
+    }
+
+    def assign_first_rows(rows: List[Dict[str, Any]], target_key: str) -> None:
+        for row in rows:
+            player_id = safe_int(row.get("player_id"), 0)
+            if player_id <= 0 or player_id not in snapshots:
+                continue
+            if stat_row_has_values(snapshots[player_id].get(target_key)):
+                continue
+            snapshots[player_id][target_key] = row
+
+    try:
+        with open_database_connection() as connection:
+            tables = sqlite_table_names(connection)
+            placeholders = ",".join("?" for _ in unique_ids)
+
+            for table_name, snapshot_key in table_to_snapshot_key.items():
+                if table_name not in tables:
+                    continue
+
+                rows_for_season = rows_to_dicts(
+                    connection.execute(
+                        f"""
+                        SELECT *
+                        FROM {table_name}
+                        WHERE player_id IN ({placeholders})
+                          AND season = ?
+                        ORDER BY player_id ASC,
+                                 COALESCE(games_played, 0) DESC
+                        """,
+                        tuple(unique_ids) + (season,),
+                    ).fetchall()
+                )
+                assign_first_rows(rows_for_season, snapshot_key)
+
+                missing_ids = [
+                    player_id
+                    for player_id in unique_ids
+                    if not stat_row_has_values(snapshots[player_id].get(snapshot_key))
+                ]
+                if not missing_ids:
+                    continue
+
+                missing_placeholders = ",".join("?" for _ in missing_ids)
+                fallback_rows = rows_to_dicts(
+                    connection.execute(
+                        f"""
+                        SELECT *
+                        FROM {table_name}
+                        WHERE player_id IN ({missing_placeholders})
+                        ORDER BY player_id ASC,
+                                 season DESC,
+                                 COALESCE(games_played, 0) DESC
+                        """,
+                        tuple(missing_ids),
+                    ).fetchall()
+                )
+                assign_first_rows(fallback_rows, snapshot_key)
+    except sqlite3.Error:
+        return {}
+
+    for snapshot in snapshots.values():
+        pitcher_season = snapshot.get("pitcherSeason") if isinstance(snapshot.get("pitcherSeason"), dict) else {}
+        pitcher_recent = (
+            snapshot.get("pitcherLastTenGames")
+            if isinstance(snapshot.get("pitcherLastTenGames"), dict)
+            else {}
+        )
+        pitching_signal_keys = [
+            "innings_pitched",
+            "outs_recorded",
+            "batters_faced",
+            "games_pitched",
+            "games_started",
+            "strike_outs",
+            "saves",
+            "wins",
+        ]
+        snapshot["isPitcher"] = any(
+            (first_numeric_field(source, pitching_signal_keys) or 0.0) > 0
+            for source in (pitcher_season, pitcher_recent)
+            if isinstance(source, dict)
+        )
+        enrich_pitching_fip_values(snapshot)
+        enrich_k_bb_percentages(snapshot)
+
+    return snapshots
+
+
+def enrich_missing_pitcher_recent_stats_for_player_breakdowns(rows: List[Dict[str, Any]], season: int) -> None:
+    for row in rows:
+        if not isinstance(row, dict) or not bool(row.get("isPitcher")):
+            continue
+
+        stats = row.get("stats") if isinstance(row.get("stats"), dict) else {}
+        recent = stats.get("pitcherLastTenGames") if isinstance(stats.get("pitcherLastTenGames"), dict) else {}
+        if stat_row_has_values(recent):
+            continue
+
+        player_id = safe_int(row.get("playerId"), 0)
+        if player_id <= 0:
+            continue
+
+        fallback_recent = build_pitcher_last_ten_games_snapshot(player_id, season, limit=10)
+        if not isinstance(fallback_recent, dict) or not stat_row_has_values(fallback_recent):
+            continue
+
+        stats["pitcherLastTenGames"] = fallback_recent
+        stats["isPitcher"] = True
+        enrich_pitching_fip_values(stats)
+        enrich_k_bb_percentages(stats)
+        row["stats"] = stats
+
+
 def build_player_breakdowns(
     players: List[Dict[str, Any]],
     previous_player_map: Dict[int, Dict[str, Any]],
     highlight_pool: List[Dict[str, Any]],
     count: int,
     team_name: str,
+    season: int,
 ) -> List[Dict[str, Any]]:
     if count <= 0:
         return []
+
+    player_ids = [safe_int(player.get("playerId"), 0) for player in players if isinstance(player, dict)]
+    db_stat_snapshots = load_player_breakdown_stat_snapshots_by_player_ids(player_ids, season)
 
     hitter_rows: List[Dict[str, Any]] = []
     for player in players:
@@ -5881,7 +6053,10 @@ def build_player_breakdowns(
                 "fip": fip_text,
                 "hittingStats": hitting if isinstance(hitting, dict) else {},
                 "pitchingStats": pitching if isinstance(pitching, dict) else {},
-                "stats": build_player_breakdown_stat_snapshot_from_team_row(False, hitting, pitching),
+                "stats": merge_player_breakdown_stat_snapshots(
+                    build_player_breakdown_stat_snapshot_from_team_row(False, hitting, pitching),
+                    db_stat_snapshots.get(player_id, {}),
+                ),
                 "seasonLine": f"AVG {avg_text} | OPS {ops_text} | HR {home_runs} | RBI {rbi}",
                 "advancedLine": f"OBP {obp_text} | OPS {ops_text} | WAR {war_text} | FIP {fip_text}",
                 "lastGameLine": " | ".join(previous_bits) if previous_bits else "No previous game line available",
@@ -5934,7 +6109,10 @@ def build_player_breakdowns(
                     "fip": fip_text,
                     "hittingStats": hitting if isinstance(hitting, dict) else {},
                     "pitchingStats": pitching if isinstance(pitching, dict) else {},
-                    "stats": build_player_breakdown_stat_snapshot_from_team_row(True, hitting, pitching),
+                    "stats": merge_player_breakdown_stat_snapshots(
+                        build_player_breakdown_stat_snapshot_from_team_row(True, hitting, pitching),
+                        db_stat_snapshots.get(player_id, {}),
+                    ),
                     "seasonLine": f"ERA {era_text} | WHIP {whip_text} | SO {strikeouts}",
                     "advancedLine": f"OBP {obp_text} | OPS {ops_text} | WAR {war_text} | FIP {fip_text}",
                     "lastGameLine": previous_player_map.get(player_id, {}).get("line", "No previous game line available"),
@@ -5952,6 +6130,8 @@ def build_player_breakdowns(
                 break
 
     selected_rows = hitter_rows[:count]
+    if count <= 12:
+        enrich_missing_pitcher_recent_stats_for_player_breakdowns(selected_rows, season)
     for row in selected_rows:
         row.pop("_score", None)
     return selected_rows
@@ -5997,7 +6177,14 @@ def build_all_qualified_player_breakdowns(
         return []
 
     candidate_count = max(1, len(players) * 3)
-    candidates = build_player_breakdowns(players, previous_player_map, highlight_pool, candidate_count, team_name)
+    candidates = build_player_breakdowns(
+        players,
+        previous_player_map,
+        highlight_pool,
+        candidate_count,
+        team_name,
+        season,
+    )
 
     selected: List[Dict[str, Any]] = []
     seen_ids = set()
@@ -6009,6 +6196,7 @@ def build_all_qualified_player_breakdowns(
         selected.append(player_payload)
 
     selected.sort(key=lambda row: str(row.get("displayName") or row.get("name") or "").lower())
+    enrich_missing_pitcher_recent_stats_for_player_breakdowns(selected, season)
     return selected
 
 
@@ -6126,6 +6314,7 @@ def build_team_bundle(
             highlight_pool,
             player_slide_count,
             resolved_team_name,
+            resolved_season,
         )
 
     base["playerBreakdowns"] = player_breakdowns
