@@ -42,11 +42,11 @@ cp .env.example .env
 python app.py
 ```
 
-Then open `http://localhost:8080`.
+Then open `http://localhost:8080` for the full-screen slides view.
 
 Slides-only view:
 
-- Open `http://localhost:8080/slides` for a full-screen slide page (no scoreboard/video panels).
+- Open `http://localhost:8080/` for the full-screen slide page. `http://localhost:8080/slides` remains as an alias.
 - This page uses `/api/state/slides` and forces `player_breakdown` generation for all qualified players.
 - `/slides` now defaults to a low-power mode (reduced motion + slower polling) tuned for Raspberry Pi playback smoothness.
 
@@ -99,6 +99,7 @@ The app auto-loads `.env` at startup.
 
 - `TEAM_ID`: Default is `135` for Padres.
 - `TEAM_NAME`: Display name in the UI.
+- `BOARD_TIMEZONE`: Local timezone used for "today" game lookups (default `America/Phoenix`).
 - `LIVE_STREAM_URL`: Optional. If empty, app falls back to highlights with scoreboard.
 - `STATE_CACHE_TTL_SECONDS`: API cache time to reduce load.
 - `LOOKBACK_DAYS`: How many days to scan for highlight clips.

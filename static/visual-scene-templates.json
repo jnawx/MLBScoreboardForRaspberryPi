@@ -19,7 +19,7 @@
     "game_today": {
       "apiEndpoint": "/api/team/{{vars.teamId}}/games?date={{vars.date}}",
       "apiVariables": {
-        "date": "2026-04-24",
+        "date": "{{state.localDate|default:payload.date|default:state.generatedAtUtc|date:iso}}",
         "teamId": "110"
       },
       "background": {
@@ -401,12 +401,12 @@
             "delayMs": 420,
             "easing": "ease"
           },
-          "h": "8.00%",
+          "h": "7.00%",
           "kind": "text",
-          "text": "Pitcher: {{payload.currentPitcher.fullName|default:TBD}}",
+          "text": "Pitcher: {{payload.currentPitcher.fullName|default:TBD}} | {{payload.currentPitcher.seasonLine|default:ERA --, FIP --, WHIP --}}",
           "textColor": "{{payload.theme.text.title|default:#f8fbff}}",
-          "textFontSize": "1.9rem",
-          "w": "50.00%",
+          "textFontSize": "1.45rem",
+          "w": "46.00%",
           "x": "4.00%",
           "y": "62.00%"
         },
@@ -418,12 +418,12 @@
             "delayMs": 520,
             "easing": "ease"
           },
-          "h": "8.00%",
+          "h": "7.00%",
           "kind": "text",
-          "text": "Batter: {{payload.currentBatter.fullName|default:TBD}}",
+          "text": "Batter: {{payload.currentBatter.fullName|default:TBD}} | {{payload.currentBatter.seasonLine|default:AVG --, OBP --, OPS --, HR --, RBI --}}",
           "textColor": "{{payload.theme.text.title|default:#f8fbff}}",
-          "textFontSize": "1.9rem",
-          "w": "50.00%",
+          "textFontSize": "1.45rem",
+          "w": "46.00%",
           "x": "4.00%",
           "y": "68.00%"
         },
@@ -588,7 +588,7 @@
     "player_breakdown": {
       "apiEndpoint": "/player/{{vars.playerId}}?date={{vars.date}}&gameId={{vars.gameId}}",
       "apiVariables": {
-        "date": "{{state.generatedAtUtc}}",
+        "date": "{{state.localDate|default:state.generatedAtUtc|date:iso}}",
         "gameId": "{{state.kiosk.nextGame.gamePk}}",
         "playerId": "{{slide.payload.playerId}}"
       },
@@ -956,7 +956,7 @@
       "apiVariables": {
         "daysAhead": "14",
         "maxGames": "6",
-        "startDate": "{{state.generatedAtUtc|date:iso}}",
+        "startDate": "{{state.localDate|default:state.generatedAtUtc|date:iso}}",
         "teamId": "{{slide.payload.teamId|default:state.teamId|default:135}}"
       },
       "background": {

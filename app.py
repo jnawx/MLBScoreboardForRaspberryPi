@@ -16,6 +16,7 @@ import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import requests
 from dotenv import load_dotenv
@@ -337,6 +338,10 @@ def resolve_player_breakdown_preset(template: Dict[str, Any], is_pitcher: bool) 
 TEAM_ID = env_int("TEAM_ID", 135)
 TEAM_NAME = os.getenv("TEAM_NAME", "San Diego Padres")
 LIVE_STREAM_URL = os.getenv("LIVE_STREAM_URL", "").strip()
+BOARD_TIMEZONE_NAME = (
+    os.getenv("BOARD_TIMEZONE", os.getenv("APP_TIMEZONE", "America/Phoenix")).strip()
+    or "America/Phoenix"
+)
 STATE_CACHE_TTL_SECONDS = env_int("STATE_CACHE_TTL_SECONDS", 45)
 LOOKBACK_DAYS = env_int("LOOKBACK_DAYS", 10)
 MAX_HIGHLIGHTS = env_int("MAX_HIGHLIGHTS", 24)
@@ -823,6 +828,26 @@ def weather_get(params: Dict[str, Any]) -> Dict[str, Any]:
 
 def utc_now_iso() -> str:
     return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def resolve_board_timezone() -> dt.tzinfo:
+    try:
+        return ZoneInfo(BOARD_TIMEZONE_NAME)
+    except ZoneInfoNotFoundError:
+        local_timezone = dt.datetime.now().astimezone().tzinfo
+        return local_timezone or dt.timezone.utc
+
+
+def board_now() -> dt.datetime:
+    return dt.datetime.now(resolve_board_timezone())
+
+
+def board_today() -> dt.date:
+    return board_now().date()
+
+
+def board_season() -> int:
+    return board_today().year
 
 
 def utc_timestamp_iso(unix_seconds: float) -> str:
@@ -1893,7 +1918,7 @@ def calculate_age_from_birthdate(raw_birth_date: Any) -> Optional[int]:
     if not birth_date:
         return None
 
-    today = dt.date.today()
+    today = board_today()
     years = today.year - birth_date.year
     if (today.month, today.day) < (birth_date.month, birth_date.day):
         years -= 1
@@ -2348,7 +2373,7 @@ def fetch_player_prop_odds(player_name: str) -> Dict[str, Any]:
 
     normalized_last_name = normalized_full_name.split(" ")[-1] if normalized_full_name else ""
 
-    date_values = [(dt.date.today() + dt.timedelta(days=offset)).isoformat() for offset in range(BETTING_ODDS_DAYS_AHEAD + 1)]
+    date_values = [(board_today() + dt.timedelta(days=offset)).isoformat() for offset in range(BETTING_ODDS_DAYS_AHEAD + 1)]
     event_map: Dict[str, Dict[str, Any]] = {}
     props: List[Dict[str, Any]] = []
 
@@ -2552,7 +2577,7 @@ def get_live_player_prop_odds_rows_cached(player_name: str) -> List[Dict[str, An
 
 
 def get_today_games(team_id: int) -> List[Dict[str, Any]]:
-    today = dt.date.today().isoformat()
+    today = board_today().isoformat()
     payload = mlb_get(
         "/api/v1/schedule",
         params={
@@ -2569,7 +2594,7 @@ def get_today_games(team_id: int) -> List[Dict[str, Any]]:
 
 
 def get_recent_games(team_id: int, lookback_days: int) -> List[Dict[str, Any]]:
-    end_date = dt.date.today()
+    end_date = board_today()
     start_date = end_date - dt.timedelta(days=lookback_days)
 
     payload = mlb_get(
@@ -3277,6 +3302,60 @@ def load_lineup_batter_season_stats_by_player_ids(player_ids: List[int], season:
     return stats_payload_by_player
 
 
+def attach_batter_season_stats(
+    target: Optional[Dict[str, Any]],
+    stats_payload: Optional[Dict[str, Any]],
+) -> None:
+    if not isinstance(target, dict):
+        return
+
+    stats = copy.deepcopy(stats_payload) if isinstance(stats_payload, dict) else {}
+    season_line = str(stats.get("line") or "").strip()
+
+    target["seasonStats"] = copy.deepcopy(stats)
+    target["season_stats"] = copy.deepcopy(stats)
+    target["seasonLine"] = season_line
+    target["season_line"] = season_line
+
+    season_avg = str(stats.get("avg") or "").strip()
+    season_obp = str(stats.get("obp") or "").strip()
+    season_slg = str(stats.get("slg") or "").strip()
+    season_ops = str(stats.get("ops") or "").strip()
+    season_home_runs = str(stats.get("homeRuns") or stats.get("home_runs") or "").strip()
+    season_rbi = str(stats.get("rbi") or "").strip()
+    season_hits = str(stats.get("hits") or "").strip()
+    season_at_bats = str(stats.get("atBats") or stats.get("at_bats") or "").strip()
+    season_games_played = str(stats.get("gamesPlayed") or stats.get("games_played") or "").strip()
+    season_plate_appearances = str(
+        stats.get("plateAppearances") or stats.get("plate_appearances") or ""
+    ).strip()
+
+    target["season"] = safe_int(stats.get("season"), 0)
+    target["seasonStatsAvailable"] = bool(stats.get("available"))
+    target["season_stats_available"] = bool(stats.get("available"))
+
+    target["seasonAvg"] = season_avg
+    target["season_avg"] = season_avg
+    target["seasonObp"] = season_obp
+    target["season_obp"] = season_obp
+    target["seasonSlg"] = season_slg
+    target["season_slg"] = season_slg
+    target["seasonOps"] = season_ops
+    target["season_ops"] = season_ops
+    target["seasonHomeRuns"] = season_home_runs
+    target["season_home_runs"] = season_home_runs
+    target["seasonRbi"] = season_rbi
+    target["season_rbi"] = season_rbi
+    target["seasonHits"] = season_hits
+    target["season_hits"] = season_hits
+    target["seasonAtBats"] = season_at_bats
+    target["season_at_bats"] = season_at_bats
+    target["seasonGamesPlayed"] = season_games_played
+    target["season_games_played"] = season_games_played
+    target["seasonPlateAppearances"] = season_plate_appearances
+    target["season_plate_appearances"] = season_plate_appearances
+
+
 def attach_lineup_batter_season_stats(
     batting_order: Optional[Dict[str, Any]],
     stats_payload_by_player: Dict[int, Dict[str, Any]],
@@ -3285,50 +3364,6 @@ def attach_lineup_batter_season_stats(
         return
 
     players = batting_order.get("players") if isinstance(batting_order.get("players"), list) else []
-
-    def apply_stat_aliases(target: Dict[str, Any], stats_payload: Dict[str, Any], season_line: str) -> None:
-        target["seasonStats"] = copy.deepcopy(stats_payload)
-        target["season_stats"] = copy.deepcopy(stats_payload)
-        target["seasonLine"] = season_line
-        target["season_line"] = season_line
-
-        season_avg = str(stats_payload.get("avg") or "").strip()
-        season_obp = str(stats_payload.get("obp") or "").strip()
-        season_slg = str(stats_payload.get("slg") or "").strip()
-        season_ops = str(stats_payload.get("ops") or "").strip()
-        season_home_runs = str(stats_payload.get("homeRuns") or stats_payload.get("home_runs") or "").strip()
-        season_rbi = str(stats_payload.get("rbi") or "").strip()
-        season_hits = str(stats_payload.get("hits") or "").strip()
-        season_at_bats = str(stats_payload.get("atBats") or stats_payload.get("at_bats") or "").strip()
-        season_games_played = str(stats_payload.get("gamesPlayed") or stats_payload.get("games_played") or "").strip()
-        season_plate_appearances = str(
-            stats_payload.get("plateAppearances") or stats_payload.get("plate_appearances") or ""
-        ).strip()
-
-        target["season"] = safe_int(stats_payload.get("season"), 0)
-        target["seasonStatsAvailable"] = bool(stats_payload.get("available"))
-        target["season_stats_available"] = bool(stats_payload.get("available"))
-
-        target["seasonAvg"] = season_avg
-        target["season_avg"] = season_avg
-        target["seasonObp"] = season_obp
-        target["season_obp"] = season_obp
-        target["seasonSlg"] = season_slg
-        target["season_slg"] = season_slg
-        target["seasonOps"] = season_ops
-        target["season_ops"] = season_ops
-        target["seasonHomeRuns"] = season_home_runs
-        target["season_home_runs"] = season_home_runs
-        target["seasonRbi"] = season_rbi
-        target["season_rbi"] = season_rbi
-        target["seasonHits"] = season_hits
-        target["season_hits"] = season_hits
-        target["seasonAtBats"] = season_at_bats
-        target["season_at_bats"] = season_at_bats
-        target["seasonGamesPlayed"] = season_games_played
-        target["season_games_played"] = season_games_played
-        target["seasonPlateAppearances"] = season_plate_appearances
-        target["season_plate_appearances"] = season_plate_appearances
 
     for player in players:
         if not isinstance(player, dict):
@@ -3340,9 +3375,7 @@ def attach_lineup_batter_season_stats(
             if player_id > 0 and isinstance(stats_payload_by_player.get(player_id), dict)
             else {}
         )
-        season_line = str(stats_payload.get("line") or "").strip()
-
-        apply_stat_aliases(player, stats_payload, season_line)
+        attach_batter_season_stats(player, stats_payload)
 
     for slot in range(1, 10):
         key = f"spot_{slot}"
@@ -3356,9 +3389,7 @@ def attach_lineup_batter_season_stats(
             if player_id > 0 and isinstance(stats_payload_by_player.get(player_id), dict)
             else {}
         )
-        season_line = str(stats_payload.get("line") or "").strip()
-
-        apply_stat_aliases(spot, stats_payload, season_line)
+        attach_batter_season_stats(spot, stats_payload)
 
 
 def build_probable_pitcher_season_stats_payload(pitching_stats: Optional[Dict[str, Any]], season: int) -> Dict[str, Any]:
@@ -4065,7 +4096,7 @@ def enrich_team_games_endpoint_payload(team_id: int, games: List[Dict[str, Any]]
     feed_cache: Dict[int, Optional[Dict[str, Any]]] = {}
     weather_cache: Dict[str, Dict[str, Any]] = {}
     default_batting_order = empty_batting_order_payload()
-    season = dt.date.today().year
+    season = board_season()
     lineup_stats_by_player_cache: Dict[int, Dict[str, Any]] = {}
 
     probable_pitcher_ids: List[int] = []
@@ -4083,6 +4114,7 @@ def enrich_team_games_endpoint_payload(team_id: int, games: List[Dict[str, Any]]
         sorted(set(probable_pitcher_ids)),
         season,
     )
+    pitcher_stats_by_player_cache: Dict[int, Dict[str, Any]] = dict(probable_pitcher_stats_by_player)
 
     for game in games:
         if not isinstance(game, dict):
@@ -4148,6 +4180,33 @@ def enrich_team_games_endpoint_payload(team_id: int, games: List[Dict[str, Any]]
         game["weather"] = copy.deepcopy(weather_cache[weather_key])
 
         live_context = extract_live_game_context(feed, team_id)
+        current_batter = (
+            live_context.get("currentBatter")
+            if isinstance(live_context.get("currentBatter"), dict)
+            else None
+        )
+        current_pitcher = (
+            live_context.get("currentPitcher")
+            if isinstance(live_context.get("currentPitcher"), dict)
+            else None
+        )
+
+        current_batter_id = safe_int(current_batter.get("id"), 0) if isinstance(current_batter, dict) else 0
+        if current_batter_id > 0 and current_batter_id not in lineup_stats_by_player_cache:
+            lineup_stats_by_player_cache.update(
+                load_lineup_batter_season_stats_by_player_ids([current_batter_id], season)
+            )
+        if isinstance(current_batter, dict):
+            attach_batter_season_stats(current_batter, lineup_stats_by_player_cache.get(current_batter_id, {}))
+
+        current_pitcher_id = safe_int(current_pitcher.get("id"), 0) if isinstance(current_pitcher, dict) else 0
+        if current_pitcher_id > 0 and current_pitcher_id not in pitcher_stats_by_player_cache:
+            pitcher_stats_by_player_cache.update(
+                load_probable_pitcher_stats_by_player_ids([current_pitcher_id], season)
+            )
+        if isinstance(current_pitcher, dict):
+            attach_probable_pitcher_stats(current_pitcher, pitcher_stats_by_player_cache)
+
         game["live"] = live_context
         game["currentMatchup"] = live_context.get("currentMatchup")
         game["currentBatter"] = live_context.get("currentBatter")
@@ -4257,7 +4316,7 @@ def get_upcoming_schedule(
     days_ahead: int,
     start_date: Optional[dt.date] = None,
 ) -> List[Dict[str, Any]]:
-    anchor_date = start_date or dt.date.today()
+    anchor_date = start_date or board_today()
     end_date = anchor_date + dt.timedelta(days=max(1, days_ahead))
 
     payload = mlb_get(
@@ -4748,7 +4807,7 @@ def fetch_people_with_stats(person_ids: List[int], season: int, include_advanced
 def build_team_player_stats(team_id: int, fallback_team_name: str) -> Dict[str, Any]:
     roster = get_team_roster(team_id)
     roster_ids = [row["playerId"] for row in roster if row.get("playerId")]
-    season = dt.date.today().year
+    season = board_season()
     people_by_id = fetch_people_with_stats(roster_ids, season, include_advanced=True)
 
     team_name = fallback_team_name
@@ -5945,7 +6004,7 @@ def build_team_bundle(
     resolved_team_id = safe_int(base.get("teamId"), team_id)
     resolved_team_name = str(base.get("teamName") or fallback_team_name).strip() or fallback_team_name
     players = base.get("players", []) if isinstance(base.get("players"), list) else []
-    resolved_season = season if season > 0 else dt.date.today().year
+    resolved_season = season if season > 0 else board_season()
 
     if include_all_qualified_player_breakdowns:
         player_breakdowns = build_all_qualified_player_breakdowns(
@@ -6772,7 +6831,7 @@ def generate_slides_from_templates(
                     theme_team_id = derived_team_id
 
             payload = {
-                "date": dt.date.today().isoformat(),
+                "date": board_today().isoformat(),
                 "headline": headline,
                 "hasGameToday": game_count > 0,
                 "isDoubleheader": game_count > 1,
@@ -6992,7 +7051,7 @@ def build_kiosk_data(
     today_games = [
         copy.deepcopy(game)
         for game in upcoming_games
-        if isinstance(game, dict) and str(game.get("officialDate", "")) == dt.date.today().isoformat()
+        if isinstance(game, dict) and str(game.get("officialDate", "")) == board_today().isoformat()
     ]
     if today_games:
         enrich_team_games_endpoint_payload(TEAM_ID, today_games)
@@ -7030,7 +7089,7 @@ def build_kiosk_data(
         featured_player = build_featured_player_card(recent_final_game, previous_feed, recent_games, feed_cache)
 
     team_bundles: Dict[str, Dict[str, Any]] = {}
-    current_season = dt.date.today().year
+    current_season = board_season()
     resolved_player_slide_count = (
         max(1, safe_int(player_slide_count_override, AUTO_PLAYER_SLIDE_COUNT))
         if player_slide_count_override is not None
@@ -7161,6 +7220,8 @@ def build_state() -> Dict[str, Any]:
     return apply_stat_decimal_precision(
         {
         "generatedAtUtc": utc_now_iso(),
+        "localDate": board_today().isoformat(),
+        "boardTimezone": BOARD_TIMEZONE_NAME,
         "teamId": TEAM_ID,
         "teamName": TEAM_NAME,
         "mode": mode,
@@ -7219,11 +7280,18 @@ def build_slides_state() -> Dict[str, Any]:
 
     recent_games = get_recent_games(TEAM_ID, LOOKBACK_DAYS)
     scoreboard = None
+    mode = "highlights"
+    stream_url = ""
 
     if game:
         current_game_pk = safe_int(game.get("gamePk"), 0) or None
         feed = get_game_feed(current_game_pk) if current_game_pk else None
         scoreboard = parse_scoreboard(game, feed)
+        if scoreboard.get("isLive") and LIVE_STREAM_URL:
+            mode = "live_stream"
+            stream_url = LIVE_STREAM_URL
+        elif scoreboard.get("isLive"):
+            mode = "highlights_with_scoreboard"
 
     kiosk = build_kiosk_data(
         recent_games,
@@ -7235,10 +7303,12 @@ def build_slides_state() -> Dict[str, Any]:
     return apply_stat_decimal_precision(
         {
             "generatedAtUtc": utc_now_iso(),
+            "localDate": board_today().isoformat(),
+            "boardTimezone": BOARD_TIMEZONE_NAME,
             "teamId": TEAM_ID,
             "teamName": TEAM_NAME,
-            "mode": "highlights",
-            "streamUrl": "",
+            "mode": mode,
+            "streamUrl": stream_url,
             "scoreboard": scoreboard,
             "highlights": [],
             "kiosk": kiosk,
@@ -7856,11 +7926,11 @@ def build_player_database_payload(
 
 
 def player_endpoint_response(player_id: int):
-    season = safe_int(request.args.get("season"), dt.date.today().year)
+    season = safe_int(request.args.get("season"), board_season())
     if season <= 0:
-        season = dt.date.today().year
+        season = board_season()
 
-    requested_date = parse_iso_date(request.args.get("date")) or dt.date.today()
+    requested_date = parse_iso_date(request.args.get("date")) or board_today()
     requested_game_pk = safe_int(request.args.get("gameId") or request.args.get("gamePk"), 0)
 
     try:
@@ -7927,13 +7997,7 @@ def health():
     return jsonify({"status": "ok"})
 
 
-@app.route("/")
-def index() -> str:
-    return render_template("index.html", team_name=TEAM_NAME)
-
-
-@app.route("/slides")
-def slides_only():
+def render_slides_page():
     slides_asset_version = str(int(dt.datetime.now(tz=dt.timezone.utc).timestamp()))
     response = make_response(
         render_template(
@@ -7948,25 +8012,19 @@ def slides_only():
     return response
 
 
-@app.route("/editor")
-def editor() -> str:
-    editor_asset_version = str(int(dt.datetime.now(tz=dt.timezone.utc).timestamp()))
-    return render_template(
-        "editor.html",
-        team_name=TEAM_NAME,
-        visual_scene_template_file=VISUAL_SCENE_TEMPLATE_FILE,
-        kiosk_template_file=KIOSK_TEMPLATE_FILE,
-        editor_asset_version=editor_asset_version,
-    )
+@app.route("/")
+@app.route("/slides")
+def slides_only():
+    return render_slides_page()
 
 
 @app.route("/api/player/<int:player_id>")
 def api_player(player_id: int):
-    season = safe_int(request.args.get("season"), dt.date.today().year)
+    season = safe_int(request.args.get("season"), board_season())
     if season <= 0:
-        season = dt.date.today().year
+        season = board_season()
 
-    end_date = dt.date.today()
+    end_date = board_today()
     start_date = end_date - dt.timedelta(days=13)
 
     profile_params = {
@@ -8274,7 +8332,7 @@ def api_visual_scene_team_schedule_overview(team_id: int):
                 400,
             )
     else:
-        start_date = dt.date.today()
+        start_date = board_today()
 
     days_ahead = max(1, min(45, safe_int(request.args.get("daysAhead"), SCHEDULE_DAYS_AHEAD)))
     max_games = max(1, min(12, safe_int(request.args.get("maxGames"), 6)))
@@ -8364,8 +8422,8 @@ def api_visual_scene_team_hitting_leaders(team_id: int):
     qualified_only = parse_bool_value(request.args.get("qualified"), True)
     categories = parse_hitting_leaderboard_categories(request.args.get("categories"))
 
-    requested_season = safe_int(request.args.get("season"), dt.date.today().year)
-    season = requested_season if requested_season > 0 else dt.date.today().year
+    requested_season = safe_int(request.args.get("season"), board_season())
+    season = requested_season if requested_season > 0 else board_season()
 
     try:
         payload = build_visual_scene_hitting_leaderboards_payload(
@@ -8406,8 +8464,8 @@ def api_visual_scene_team_pitching_leaders(team_id: int):
     qualified_only = parse_bool_value(request.args.get("qualified"), False)
     categories = parse_pitching_leaderboard_categories(request.args.get("categories"))
 
-    requested_season = safe_int(request.args.get("season"), dt.date.today().year)
-    season = requested_season if requested_season > 0 else dt.date.today().year
+    requested_season = safe_int(request.args.get("season"), board_season())
+    season = requested_season if requested_season > 0 else board_season()
 
     try:
         payload = build_visual_scene_pitching_leaderboards_payload(
@@ -8458,7 +8516,7 @@ def api_team_games_for_date(team_id: int):
                 400,
             )
     else:
-        requested_date = dt.date.today()
+        requested_date = board_today()
 
     try:
         games = get_team_games_for_date(team_id, requested_date)
